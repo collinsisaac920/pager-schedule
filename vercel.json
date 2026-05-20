@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "installCommand": "yarn install",
+  "buildCommand": "cd apps/web && yarn build",
+  "outputDirectory": "apps/web/.next",
+  "framework": "nextjs",
+  "regions": ["fra1"]
+}
