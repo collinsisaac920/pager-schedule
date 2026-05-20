@@ -15,6 +15,7 @@
     "example-apps/*"
   ],
   "scripts": {
+    "vercel-build": "cd apps/web && yarn build",
     "app-store-cli": "yarn workspace @calcom/app-store-cli",
     "app-store:build": "yarn turbo build --filter=@calcom/app-store-cli",
     "app-store:watch": "yarn app-store-cli watch",
@@ -217,8 +218,9 @@
     }
   },
   "engines": {
+    "node": ">=18.0.0",
     "npm": ">=7.0.0",
-    "yarn": ">=4.12.0"
+    "yarn": ">=1.22.0"
   },
   "prisma": {
     "schema": "packages/prisma/schema.prisma",

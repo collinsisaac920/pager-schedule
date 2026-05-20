@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "yarn install",
+  "installCommand": "yarn install --no-immutable",
   "buildCommand": "cd apps/web && yarn build",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
