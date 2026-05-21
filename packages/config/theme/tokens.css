@@ -42,15 +42,15 @@
   --color-subtle: var(--cal-bg-subtle);
   --color-cal-muted: var(--cal-bg-muted);
   --color-inverted: var(--cal-bg-inverted);
-  --color-primary-default: #6366F1;
-  --color-primary-emphasis: #4F46E5;
-  --color-primary-muted: #EEF2FF;
-  --color-brand: #6366F1;
-  --color-brand-default: #6366F1;
-  --color-brand-emphasis: #4F46E5;
-  --color-brand-muted: #A5B4FC;
-  --color-brand-subtle: #EEF2FF;
-  --color-brand-accent: #ffffff;
+  --color-primary-default: var(--cal-bg-primary);
+  --color-primary-emphasis: var(--cal-bg-primary-emphasis);
+  --color-primary-muted: var(--cal-bg-primary-muted);
+  --color-brand: var(--cal-brand);
+  --color-brand-default: var(--cal-brand);
+  --color-brand-emphasis: var(--cal-brand-emphasis);
+  --color-brand-muted: var(--cal-brand-muted);
+  --color-brand-subtle: var(--cal-brand-subtle, #9CA3AF);
+  --color-brand-accent: var(--cal-brand-accent, white);
   --color-semantic-info-subtle: var(--cal-bg-semantic-info-subtle);
   --color-semantic-info-emphasis: var(--cal-bg-semantic-info-emphasis);
   --color-semantic-success-subtle: var(--cal-bg-semantic-success-subtle);
@@ -131,10 +131,10 @@
   --text-color-success: var(--cal-text-success);
   --text-color-attention: var(--cal-text-attention);
   --text-color-error: var(--cal-text-error);
-  --text-color-brand: #ffffff;
+  --text-color-brand: var(--cal-brand-text);
 
   /* Default Ring Color */
-  --default-ring-color: #6366F1;
+  --default-ring-color: rgb(59 130 246 / 0.5);
 
   /* Cal.diy Box Shadows */
   --shadow-dropdown: var(--shadow-dropdown);
@@ -328,11 +328,10 @@
   --cal-text-attention: hsla(16, 62%, 28%, 1);
   --cal-text-error: hsla(0, 63%, 31%, 1);
 
-  /* Brand — Pager Schedule Deep Indigo */
-  --cal-brand: #6366F1;
-  --cal-brand-emphasis: #4F46E5;
-  --cal-brand-text: #FFFFFF;
-  --cal-brand-subtle: #EEF2FF;
+  /* Brand */
+  --cal-brand: hsla(221, 39%, 11%, 1);
+  --cal-brand-emphasis: hsla(0, 0%, 6%, 1);
+  --cal-brand-text: hsla(0, 0%, 100%, 1);
 
   /* Box Shadows */
   --shadow-dropdown: 0px 5px 20px 0px rgba(0, 0, 0, 0.10), 0px 10px 40px 0px rgba(0, 0, 0, 0.03);
@@ -453,11 +452,10 @@
   --cal-text-attention: hsla(37, 86%, 92%, 1);
   --cal-text-error: hsla(3, 66%, 93%, 1);
 
-  /* Brand — Pager Schedule Deep Indigo (dark mode) */
-  --cal-brand: #6366F1;
-  --cal-brand-emphasis: #4F46E5;
-  --cal-brand-text: #FFFFFF;
-  --cal-brand-subtle: #1e1b4b;
+  /* Brand */
+  --cal-brand: hsla(0, 0%, 100%, 1);
+  --cal-brand-emphasis: hsla(218, 11%, 65%, 1);
+  --cal-brand-text: hsla(0, 0%, 0%, 1);
 
   /* Fill Colors */
   --fill-emphasis: var(--cal-text-emphasis);

@@ -182,8 +182,8 @@ export default function Login({
         {/* Main Card */}
         <div className="w-full rounded-xl border border-subtle bg-default p-10 shadow-sm">
           {/* Logo */}
-          <div className="mb-6 flex justify-center">
-            <img src="/logo.svg" alt="Pager Schedule" height={40} style={{ height: 40 }} />
+          <div className="mb-2 text-center">
+            <h1 className="font-cal text-xl font-bold text-emphasis">Cal.diy</h1>
           </div>
 
           {/* Heading */}
@@ -311,7 +311,7 @@ export default function Login({
               {/* Submit Button */}
               <Button
                 type="submit"
-                variant="default"
+                variant="outline"
                 className="mt-8 w-full"
                 disabled={formState.isSubmitting}>
                 {twoFactorRequired ? t("submit") : t("continue")}

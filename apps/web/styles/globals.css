@@ -4,14 +4,6 @@
 @import "../../../packages/coss-ui/src/styles/globals.css";
 @import "./raqb.css";
 
-:root {
-  --brand: #6366F1;
-  --brand-color: #6366F1;
-  --brand-hover: #4F46E5;
-  --brand-light: #EEF2FF;
-  --brand-text: #FFFFFF;
-}
-
 ::-moz-selection {
   color: var(--cal-brand-text);
   background: var(--cal-brand);
@@ -429,87 +421,4 @@ html.todesktop.dark {
 html[dir="rtl"] .react-tel-input .flag-dropdown {
   left: auto !important;
   right: 0 !important;
-}
-
-/* ================================
-   PAGER SCHEDULE BRAND OVERRIDE
-   Forces #6366F1 Deep Indigo
-   ================================ */
-
-:root,
-:root[data-theme="light"],
-html,
-body {
-  --brand-color: #6366F1 !important;
-  --cal-brand: #6366F1 !important;
-  --cal-brand-emphasis: #4F46E5 !important;
-  --cal-brand-subtle: #EEF2FF !important;
-  --cal-brand-text: #ffffff !important;
-  --primary: #6366F1 !important;
-  --primary-foreground: #ffffff !important;
-  --ring: #6366F1 !important;
-  --sidebar-primary: #6366F1 !important;
-  --sidebar-primary-foreground: #ffffff !important;
-}
-
-.dark {
-  --cal-brand: #6366F1 !important;
-  --cal-brand-emphasis: #4F46E5 !important;
-  --cal-brand-subtle: #1e1b4b !important;
-  --cal-brand-text: #ffffff !important;
-  --primary: #6366F1 !important;
-  --primary-foreground: #ffffff !important;
-  --ring: #6366F1 !important;
-  --sidebar-primary: #6366F1 !important;
-  --sidebar-primary-foreground: #ffffff !important;
-}
-
-/* Force all primary buttons */
-.bg-brand,
-[class*="bg-brand"],
-.bg-cal-brand,
-[class*="bg-cal-brand"] {
-  background-color: #6366F1 !important;
-  color: #ffffff !important;
-}
-
-/* Force text brand colour */
-.text-brand,
-[class*="text-brand"],
-.text-cal-brand,
-[class*="text-cal-brand"] {
-  color: #6366F1 !important;
-}
-
-/* Force border brand colour */
-.border-brand,
-[class*="border-brand"],
-.border-cal-brand {
-  border-color: #6366F1 !important;
-}
-
-/* Force focus rings */
-*:focus-visible {
-  outline-color: #6366F1 !important;
-  --tw-ring-color: #6366F1 !important;
-}
-
-/* Nav active state — show brand colour on active items */
-[aria-current="page"] .text-emphasis,
-nav [aria-current="page"] {
-  color: #6366F1 !important;
-  background-color: #EEF2FF !important;
-}
-
-.dark nav [aria-current="page"] {
-  background-color: #312e81 !important;
-  color: #818CF8 !important;
-}
-
-nav [aria-current="page"] svg {
-  color: #6366F1 !important;
-}
-
-.dark nav [aria-current="page"] svg {
-  color: #818CF8 !important;
 }
