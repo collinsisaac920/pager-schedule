@@ -49,7 +49,7 @@ function isPasswordValid(password: string, breakdown?: boolean, strict?: boolean
     num = false, // At least one number
     min = false, // Eight characters, or fifteen in strict mode.
     admin_min = false;
-  if (password.length >= 7 && (!strict || password.length > 14)) min = true;
+  if (password.length >= 8 && (!strict || password.length > 14)) min = true;
   if (strict && password.length > 14) admin_min = true;
   if (password.match(/\d/)) num = true;
   if (password.match(/[a-z]/)) low = true;

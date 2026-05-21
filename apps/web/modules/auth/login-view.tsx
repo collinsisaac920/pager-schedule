@@ -127,6 +127,7 @@ export default function Login({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastUsed, setLastUsed] = useLastUsed();
   const [showPassword, setShowPassword] = useState(false);
+  const [magicEmail, setMagicEmail] = useState("");
 
   const errorMessages: { [key: string]: string } = {
     // [ErrorCode.SecondFactorRequired]: t("2fa_enabled_instructions"),
@@ -317,6 +318,71 @@ export default function Login({
                 {twoFactorRequired ? t("submit") : t("continue")}
               </Button>
             </form>
+
+            {/* Magic link sign in */}
+            {!twoFactorRequired && (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    margin: "20px 0",
+                  }}>
+                  <div style={{ flex: 1, height: 1, background: "#E4E8F2" }} />
+                  <span style={{ fontSize: 12, color: "#94A3B8" }}>or sign in with email link</span>
+                  <div style={{ flex: 1, height: 1, background: "#E4E8F2" }} />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={magicEmail}
+                    onChange={(e) => setMagicEmail(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "1px solid #E4E8F2",
+                      borderRadius: 9,
+                      fontSize: 13,
+                      marginBottom: 10,
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      signIn("email", {
+                        email: magicEmail,
+                        callbackUrl: "/event-types",
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 0",
+                      background: "#F8FAFC",
+                      border: "1px solid #E4E8F2",
+                      borderRadius: 9,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}>
+                    Send sign in link →
+                  </button>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: "#94A3B8",
+                      textAlign: "center",
+                      marginTop: 8,
+                      fontFamily: "monospace",
+                    }}>
+                    Works with Protonmail and all email providers
+                  </p>
+                </div>
+              </>
+            )}
 
             {/* Two Factor Footer */}
             {twoFactorRequired && (

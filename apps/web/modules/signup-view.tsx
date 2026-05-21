@@ -514,16 +514,9 @@ export default function Signup({
                           data-testid="signup-usernamefield"
                           setPremium={(value) => setPremiumUsername(value)}
                           addOnLeading={
-                            orgSlug
-                              ? truncateDomain(
-                                  `${WEBAPP_URL.replace(
-                                    URL_PROTOCOL_REGEX,
-                                    ""
-                                  )}/`
-                                )
-                              : truncateDomain(
-                                  `${WEBSITE_URL.replace(URL_PROTOCOL_REGEX, "")}/`
-                                )
+                            truncateDomain(
+                              `${WEBAPP_URL.replace(URL_PROTOCOL_REGEX, "")}/`
+                            )
                           }
                         />
                       ) : null}
