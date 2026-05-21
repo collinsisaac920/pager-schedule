@@ -888,11 +888,9 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAcco
                 background: strColors[pwStr],
               }} />
             </div>
-            {pwStr > 0 && (
-              <div style={{ marginTop: 5, fontSize: 12, color: strColors[pwStr] }}>
-                {strLabels[pwStr]}
-              </div>
-            )}
+            <div style={{ marginTop: 5, fontSize: 12, color: pwStr > 0 ? strColors[pwStr] : C.slate }}>
+              {pwStr > 0 ? strLabels[pwStr] : "Min 7 chars · uppercase · lowercase · number"}
+            </div>
           </div>
         </div>
 
@@ -1580,6 +1578,21 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
 
   async function handleCreateAccount() {
     if (!form.firstName || !form.password) return;
+
+    const pw = form.password;
+    if (pw.length < 7) {
+      setError("Password must be at least 7 characters.");
+      return;
+    }
+    if (!/[A-Z]/.test(pw) || !/[a-z]/.test(pw)) {
+      setError("Password must contain both uppercase and lowercase letters.");
+      return;
+    }
+    if (!/\d/.test(pw)) {
+      setError("Password must contain at least one number.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     const username = (form.firstName + (form.lastName || ""))

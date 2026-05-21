@@ -1,6 +1,7 @@
 import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
 import { parseRequestData } from "app/api/parseRequestData";
 import { NextResponse, type NextRequest } from "next/server";
+import { ZodError } from "zod";
 
 import calcomSignupHandler from "./handlers/calcomSignupHandler";
 import selfHostedSignupHandler from "./handlers/selfHostedHandler";
@@ -70,6 +71,14 @@ async function handler(req: NextRequest) {
   } catch (e) {
     if (e instanceof HttpError) {
       return NextResponse.json({ message: e.message }, { status: e.statusCode });
+    }
+    if (e instanceof ZodError) {
+      const first = e.errors[0];
+      const message =
+        first?.path[0] === "password"
+          ? "Password must be at least 7 characters and include uppercase, lowercase, and a number."
+          : (first?.message ?? "Invalid input");
+      return NextResponse.json({ message }, { status: 400 });
     }
     logger.error(e);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
