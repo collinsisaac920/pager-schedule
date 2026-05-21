@@ -4,7 +4,7 @@
 // Multi-step signup / sign-in flow — Step 0 (Landing) + shared infrastructure
 // Parts 2–4 will add steps 1–8 (see TODO comments below).
 // ─────────────────────────────────────────────────────────────────────────────
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -1185,25 +1185,27 @@ function Step5({ role, setRole, next, back }) {
 }
 
 // ─── DATA: Calendars + Meetings ──────────────────────────────────────────────
+// integrationSlug = the Cal.com app-store slug for OAuth-based calendars.
+// null = credential-based (Apple, CalDAV) or no direct integration.
 const CALENDARS = [
-  { id: "google",   label: "Google Calendar",   sub: "Gmail / Google Workspace" },
-  { id: "outlook",  label: "Outlook Calendar",  sub: "Microsoft 365 / Outlook.com" },
-  { id: "apple",    label: "Apple Calendar",    sub: "iCloud / macOS / iOS" },
-  { id: "exchange", label: "Exchange Calendar", sub: "Microsoft Exchange Server" },
-  { id: "yahoo",    label: "Yahoo Calendar",    sub: "Yahoo Mail accounts" },
-  { id: "zoho",     label: "Zoho Calendar",     sub: "Zoho Workplace" },
-  { id: "fastmail", label: "FastMail",          sub: "FastMail accounts" },
-  { id: "proton",   label: "Proton Calendar",   sub: "ProtonMail accounts" },
-  { id: "caldav",   label: "CalDAV / iCal URL", sub: "Any CalDAV-compatible calendar" },
+  { id: "google",   label: "Google Calendar",   sub: "Gmail / Google Workspace",       integrationSlug: "googlecalendar" },
+  { id: "outlook",  label: "Outlook Calendar",  sub: "Microsoft 365 / Outlook.com",    integrationSlug: "office365calendar" },
+  { id: "apple",    label: "Apple Calendar",    sub: "iCloud / macOS / iOS",            integrationSlug: null },
+  { id: "exchange", label: "Exchange Calendar", sub: "Microsoft Exchange Server",       integrationSlug: null },
+  { id: "yahoo",    label: "Yahoo Calendar",    sub: "Yahoo Mail accounts",             integrationSlug: null },
+  { id: "zoho",     label: "Zoho Calendar",     sub: "Zoho Workplace",                 integrationSlug: "zohocalendar" },
+  { id: "fastmail", label: "FastMail",          sub: "FastMail accounts",               integrationSlug: null },
+  { id: "proton",   label: "Proton Calendar",   sub: "ProtonMail accounts",             integrationSlug: null },
+  { id: "caldav",   label: "CalDAV / iCal URL", sub: "Any CalDAV-compatible calendar", integrationSlug: null },
 ];
 
 const MEETINGS = [
-  { id: "zoom",     label: "Zoom",            color: "#2D8CFF", initials: "Z", needsConnect: true },
-  { id: "meet",     label: "Google Meet",     color: "#00AC47", initials: "M", needsConnect: true },
-  { id: "teams",    label: "Microsoft Teams", color: "#5059C9", initials: "T", needsConnect: true },
-  { id: "webex",    label: "Cisco Webex",     color: "#00BCEB", initials: "W", needsConnect: true },
-  { id: "inperson", label: "In-person",       emoji: "📍",                    needsConnect: false },
-  { id: "phone",    label: "Phone call",      emoji: "📞",                    needsConnect: false },
+  { id: "zoom",     label: "Zoom",            color: "#2D8CFF", initials: "Z", needsConnect: true,  integrationSlug: "zoomvideo" },
+  { id: "meet",     label: "Google Meet",     color: "#00AC47", initials: "M", needsConnect: true,  integrationSlug: "googlevideo" },
+  { id: "teams",    label: "Microsoft Teams", color: "#5059C9", initials: "T", needsConnect: true,  integrationSlug: "office365video" },
+  { id: "webex",    label: "Cisco Webex",     color: "#00BCEB", initials: "W", needsConnect: true,  integrationSlug: "webex" },
+  { id: "inperson", label: "In-person",       emoji: "📍",                    needsConnect: false, integrationSlug: null },
+  { id: "phone",    label: "Phone call",      emoji: "📞",                    needsConnect: false, integrationSlug: null },
 ];
 
 // ─── COMPONENT: CalIcon ───────────────────────────────────────────────────────
@@ -1255,6 +1257,8 @@ function CalIcon({ id }) {
 // ─── COMPONENT: CalendarRow ───────────────────────────────────────────────────
 function CalendarRow({ cal, connected, onConnect }) {
   const [hov, setHov] = useState(false);
+  const hasOAuth = !!cal.integrationSlug;
+  const btnLabel = hasOAuth ? "Connect →" : "Set up →";
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 14,
@@ -1291,7 +1295,7 @@ function CalendarRow({ cal, connected, onConnect }) {
             transition: "all .15s",
           }}
         >
-          Connect
+          {btnLabel}
         </button>
       )}
     </div>
@@ -1330,9 +1334,9 @@ function MeetingTile({ m, selected, onToggle }) {
 
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: C.ink }}>{m.label}</div>
-        {m.needsConnect && (
+        {m.needsConnect && m.integrationSlug && (
           <div style={{ fontSize: 12, marginTop: 2, color: selected ? C.success : C.blue }}>
-            {selected ? "✓ Will connect on save" : "Click to select & connect"}
+            {selected ? "✓ Connected" : "Click to connect →"}
           </div>
         )}
       </div>
@@ -1355,10 +1359,7 @@ function MeetingTile({ m, selected, onToggle }) {
 }
 
 // ─── STEP 6 — CALENDAR CONNECT ────────────────────────────────────────────────
-function Step6({ connectedCals, setConnectedCals, next, back }) {
-  const toggleCal = id => setConnectedCals(p =>
-    p.includes(id) ? p.filter(x => x !== id) : [...p, id]
-  );
+function Step6({ connectedCals, setConnectedCals, onConnectCalendar, next, back }) {
   return (
     <div style={{
       flex: 1, display: "flex", justifyContent: "center",
@@ -1382,7 +1383,7 @@ function Step6({ connectedCals, setConnectedCals, next, back }) {
             <CalendarRow
               key={cal.id} cal={cal}
               connected={connectedCals.includes(cal.id)}
-              onConnect={() => toggleCal(cal.id)}
+              onConnect={() => onConnectCalendar(cal)}
             />
           ))}
         </div>
@@ -1398,10 +1399,17 @@ function Step6({ connectedCals, setConnectedCals, next, back }) {
 }
 
 // ─── STEP 7 — MEETING LOCATION ────────────────────────────────────────────────
-function Step7({ meetingTypes, setMeetingTypes, next, back }) {
-  const toggleMeeting = id => setMeetingTypes(p =>
-    p.includes(id) ? p.filter(x => x !== id) : [...p, id]
-  );
+function Step7({ meetingTypes, setMeetingTypes, onConnectMeeting, next, back }) {
+  const handleTileClick = m => {
+    if (m.needsConnect && m.integrationSlug && !meetingTypes.includes(m.id)) {
+      onConnectMeeting(m);
+    } else {
+      setMeetingTypes(p =>
+        p.includes(m.id) ? p.filter(x => x !== m.id) : [...p, m.id]
+      );
+    }
+  };
+
   return (
     <div style={{
       flex: 1, display: "flex", justifyContent: "center",
@@ -1424,7 +1432,7 @@ function Step7({ meetingTypes, setMeetingTypes, next, back }) {
             <MeetingTile
               key={m.id} m={m}
               selected={meetingTypes.includes(m.id)}
-              onToggle={() => toggleMeeting(m.id)}
+              onToggle={() => handleTileClick(m)}
             />
           ))}
         </div>
@@ -1535,6 +1543,65 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
 
   const next = () => setStep(s => s + 1);
   const back = () => setStep(s => s - 1);
+
+  // ── Restore step + connected state after OAuth redirect returns ──
+  useEffect(() => {
+    const savedStep = sessionStorage.getItem("pager_step");
+    const savedCal  = sessionStorage.getItem("pager_cal");
+    const savedMeet = sessionStorage.getItem("pager_meet");
+    if (savedStep !== null) {
+      setStep(parseInt(savedStep, 10));
+      sessionStorage.removeItem("pager_step");
+    }
+    if (savedCal) {
+      setConnectedCals(p => p.includes(savedCal) ? p : [...p, savedCal]);
+      sessionStorage.removeItem("pager_cal");
+    }
+    if (savedMeet) {
+      setMeetingTypes(p => p.includes(savedMeet) ? p : [...p, savedMeet]);
+      sessionStorage.removeItem("pager_meet");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Integration OAuth helpers ──
+
+  async function connectIntegration({ integrationSlug, id, returnStep, storageKey }) {
+    setLoading(true);
+    setError("");
+    try {
+      const returnTo = window.location.href;
+      const state = JSON.stringify({ onErrorReturnTo: returnTo, fromApp: true, returnTo });
+      const params = new URLSearchParams({ state });
+      const res = await fetch(`/api/integrations/${integrationSlug}/add?${params}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Could not start connection");
+      }
+      const json = await res.json();
+      if (json.url) {
+        sessionStorage.setItem("pager_step", String(returnStep));
+        sessionStorage.setItem(storageKey, id);
+        window.location.href = json.url;
+      }
+    } catch (err) {
+      setError(err.message || "Could not connect. Please try again.");
+    }
+    setLoading(false);
+  }
+
+  function handleConnectCalendar(cal) {
+    if (cal.integrationSlug) {
+      connectIntegration({ integrationSlug: cal.integrationSlug, id: cal.id, returnStep: 6, storageKey: "pager_cal" });
+    } else {
+      // Credential-based calendars: open settings in new tab
+      window.open("/settings/integrations", "_blank");
+    }
+  }
+
+  function handleConnectMeeting(m) {
+    connectIntegration({ integrationSlug: m.integrationSlug, id: m.id, returnStep: 7, storageKey: "pager_meet" });
+  }
 
   // ── Auth handlers ──
 
@@ -1751,12 +1818,14 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
             {step === 6 && (
               <Step6
                 connectedCals={connectedCals} setConnectedCals={setConnectedCals}
+                onConnectCalendar={handleConnectCalendar}
                 next={next} back={back}
               />
             )}
             {step === 7 && (
               <Step7
                 meetingTypes={meetingTypes} setMeetingTypes={setMeetingTypes}
+                onConnectMeeting={handleConnectMeeting}
                 next={next} back={back}
               />
             )}
