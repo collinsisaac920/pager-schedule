@@ -47,7 +47,7 @@ function Expired() {
         <p>{t("request_is_expired_instructions")}</p>
         <Link
           href="/auth/forgot-password"
-          className="flex w-full justify-center px-4 py-2 text-sm font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2">
+          className="flex w-full justify-center px-4 py-2 text-sm font-medium text-brand focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2">
           {t("try_again")}
         </Link>
       </div>
