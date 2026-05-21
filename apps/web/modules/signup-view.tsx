@@ -415,6 +415,10 @@ export default function Signup({
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo.svg" alt="Pager Schedule" width={140} height={40} />
+                  </div>
                   <h1 className="font-cal text-[28px] leading-none">
                     {IS_CALCOM ? t("create_your_calcom_account") : t("create_your_account")}
                   </h1>

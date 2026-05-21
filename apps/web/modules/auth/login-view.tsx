@@ -182,9 +182,9 @@ export default function Login({
         {/* Main Card */}
         <div className="w-full rounded-xl border border-subtle bg-default p-10 shadow-sm">
           {/* Logo */}
-          <div className="mb-2 text-center">
-            <h1 className="font-cal text-xl font-bold text-emphasis">Cal.diy</h1>
-          </div>
+          <div className="mb-6 flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Pager Schedule" width={140} height={40} /></div>
 
           {/* Heading */}
           <p className="mb-8 text-center text-sm text-subtle" data-testid="login-subtitle">

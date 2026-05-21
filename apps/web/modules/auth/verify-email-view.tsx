@@ -61,6 +61,10 @@ function VerifyEmailPage() {
   return (
     <div className="h-screen w-full ">
       <div className="flex h-full w-full flex-col items-center justify-center">
+        <div style={{ marginBottom: 32 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Pager Schedule" width={140} height={40} />
+        </div>
         <div className="max-w-3xl">
           <EmptyScreen
             border
