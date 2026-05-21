@@ -5,6 +5,7 @@
 // Parts 2–4 will add steps 1–8 (see TODO comments below).
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
@@ -393,6 +394,8 @@ function Step0({
   siPass, setSiPass,
   showSiPw, setShowSiPw,
   onContinue,
+  onGoogleClick, onSignIn, onMagicLink,
+  loading, error,
 }) {
   const [gHov,     setGHov]     = useState(false);
   const [magicHov, setMagicHov] = useState(false);
@@ -484,6 +487,8 @@ function Step0({
               style={googleBtnSt}
               onMouseEnter={() => setGHov(true)}
               onMouseLeave={() => setGHov(false)}
+              onClick={onGoogleClick}
+              disabled={loading}
             >
               <GoogleSvg /> Continue with Google
             </button>
@@ -499,9 +504,13 @@ function Step0({
               onChange={e => setEmail(e.target.value)}
             />
 
+            {error && landingTab === "signup" && (
+              <p style={{ fontSize: 13, color: C.red, marginBottom: 12, marginTop: -6 }}>{error}</p>
+            )}
+
             <ContinueBtn
               label="Continue with email →"
-              disabled={!email.trim()}
+              disabled={!email.trim() || loading}
               onClick={() => email.trim() && onContinue()}
             />
 
@@ -536,6 +545,8 @@ function Step0({
               style={googleBtnSt}
               onMouseEnter={() => setGHov(true)}
               onMouseLeave={() => setGHov(false)}
+              onClick={onGoogleClick}
+              disabled={loading}
             >
               <GoogleSvg /> Continue with Google
             </button>
@@ -563,8 +574,7 @@ function Step0({
               }
               right={
                 <a
-                  href="#"
-                  onClick={e => e.preventDefault()}
+                  href="/auth/forgot-password"
                   style={{ fontSize: 13, color: C.blue, textDecoration: "none" }}
                 >
                   Forgot password?
@@ -572,10 +582,14 @@ function Step0({
               }
             />
 
+            {error && landingTab === "signin" && (
+              <p style={{ fontSize: 13, color: C.red, marginBottom: 12 }}>{error}</p>
+            )}
+
             <ContinueBtn
-              label="Sign in →"
-              disabled={!siEmail.trim() || !siPass}
-              onClick={() => {}}
+              label={loading ? "Signing in…" : "Sign in →"}
+              disabled={!siEmail.trim() || !siPass || loading}
+              onClick={onSignIn}
             />
 
             <Divider label="or" />
@@ -584,8 +598,9 @@ function Step0({
               style={magicBtnSt}
               onMouseEnter={() => setMagicHov(true)}
               onMouseLeave={() => setMagicHov(false)}
+              onClick={() => onMagicLink(siEmail)}
+              disabled={loading || !siEmail.trim()}
             >
-              {/* Envelope icon */}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke={C.blue} strokeWidth="2"
                 strokeLinecap="round" strokeLinejoin="round">
@@ -613,7 +628,7 @@ function Step0({
 }
 
 // ─── STEP 1 — EMAIL VERIFICATION ─────────────────────────────────────────────
-function Step1({ email, setEmail, setStep, next }) {
+function Step1({ email, setEmail, setStep, onResend, onVerifiedContinue, loading, error, mode }) {
   const wrapSt = {
     flex: 1, display: "flex",
     alignItems: "center", justifyContent: "center",
@@ -686,38 +701,61 @@ function Step1({ email, setEmail, setStep, next }) {
 
         <button
           type="button"
-          onClick={() => {}}
+          onClick={onResend}
+          disabled={loading}
           style={{
             background: "none", border: "none",
             color: C.blue, fontSize: 13.5, fontWeight: 500,
-            cursor: "pointer", padding: 0, display: "block",
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.6 : 1,
+            padding: 0, display: "block",
             marginBottom: 22,
           }}
         >
           Resend confirmation email →
         </button>
 
+        {error && (
+          <p style={{ fontSize: 13, color: C.red, marginBottom: 12 }}>{error}</p>
+        )}
+
         <div style={{ height: 1, background: C.border, marginBottom: 18 }} />
 
         <p style={{ fontSize: 13.5, color: C.slate, lineHeight: 1.7, marginBottom: 20 }}>
-          If you want to sign up with another account, then{" "}
-          <a
-            href="#"
-            onClick={e => { e.preventDefault(); setEmail(""); setStep(0); }}
-            style={{ color: C.blue, textDecoration: "none", fontWeight: 500 }}
-          >
-            click on this link
-          </a>.
+          {mode === "magic"
+            ? "Click the link we sent you to be signed in automatically."
+            : <>
+                If you want to sign up with another account, then{" "}
+                <a
+                  href="#"
+                  onClick={e => { e.preventDefault(); setEmail(""); setStep(0); }}
+                  style={{ color: C.blue, textDecoration: "none", fontWeight: 500 }}
+                >
+                  click on this link
+                </a>.
+              </>
+          }
         </p>
 
-        <ContinueBtn label="I've verified — continue →" onClick={next} />
+        {mode === "magic" ? (
+          <ContinueBtn
+            label="Back to sign in →"
+            onClick={() => setStep(0)}
+          />
+        ) : (
+          <ContinueBtn
+            label={loading ? "Verifying…" : "I've verified — continue →"}
+            disabled={loading}
+            onClick={onVerifiedContinue}
+          />
+        )}
       </div>
     </div>
   );
 }
 
 // ─── STEP 2 — PROFILE SETUP ───────────────────────────────────────────────────
-function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, next, back }) {
+function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAccount, back, loading, error }) {
   const [fnFocus, setFnFocus] = useState(false);
   const [lnFocus, setLnFocus] = useState(false);
   const [pwFocus, setPwFocus] = useState(false);
@@ -837,10 +875,14 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, next, back }
           </div>
         </div>
 
+        {error && (
+          <p style={{ fontSize: 13, color: C.red, marginBottom: 12 }}>{error}</p>
+        )}
+
         <ContinueBtn
-          label="Create account →"
-          disabled={!form.firstName || !form.password}
-          onClick={next}
+          label={loading ? "Creating account…" : "Create account →"}
+          disabled={!form.firstName || !form.password || loading}
+          onClick={onCreateAccount}
         />
 
         <BackBtn onClick={back} />
@@ -1442,6 +1484,7 @@ function Step8({ form }) {
         <button
           type="button"
           style={{ ...btnBlue, width: "auto", padding: "14px 48px", fontSize: 16 }}
+          onClick={() => { window.location.href = "/event-types"; }}
         >
           Go to dashboard →
         </button>
@@ -1451,10 +1494,13 @@ function Step8({ form }) {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function PagerScheduleFlow() {
+export default function PagerScheduleFlow({ initialTab = "signup" }) {
   // ── Global state ──
   const [step,          setStep]          = useState(0);
-  const [landingTab,    setLandingTab]    = useState("signup");
+  const [landingTab,    setLandingTab]    = useState(initialTab);
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState("");
+  const [step1Mode,     setStep1Mode]     = useState("signup"); // "signup" | "magic"
   const [email,         setEmail]         = useState("");
   const [siEmail,       setSiEmail]       = useState("");
   const [siPass,        setSiPass]        = useState("");
@@ -1470,7 +1516,104 @@ export default function PagerScheduleFlow() {
 
   const next = () => setStep(s => s + 1);
   const back = () => setStep(s => s - 1);
-  const skipToEnd = () => setStep(8);
+
+  // ── Auth handlers ──
+
+  async function handleGoogleAuth() {
+    setLoading(true);
+    setError("");
+    await signIn("google", { callbackUrl: "/event-types" });
+    setLoading(false);
+  }
+
+  async function handleCredentialsSignIn() {
+    setLoading(true);
+    setError("");
+    const res = await signIn("credentials", {
+      email: siEmail.toLowerCase().trim(),
+      password: siPass,
+      redirect: false,
+    });
+    setLoading(false);
+    if (res?.error) {
+      setError("Incorrect email or password. Please try again.");
+    } else {
+      window.location.href = "/event-types";
+    }
+  }
+
+  async function handleMagicLink(emailAddr) {
+    if (!emailAddr.trim()) return;
+    setLoading(true);
+    setError("");
+    await signIn("email", {
+      email: emailAddr.toLowerCase().trim(),
+      redirect: false,
+      callbackUrl: "/event-types",
+    });
+    setLoading(false);
+    setEmail(emailAddr.trim());
+    setStep1Mode("magic");
+    setStep(1);
+  }
+
+  async function handleCreateAccount() {
+    if (!form.firstName || !form.password) return;
+    setLoading(true);
+    setError("");
+    const username = (form.firstName + (form.lastName || ""))
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "") || email.split("@")[0].replace(/[^a-z0-9]/g, "");
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          password: form.password,
+          username,
+          language: "en",
+        }),
+      });
+      if (res.status === 201) {
+        setStep1Mode("signup");
+        setStep(1);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message || "Could not create account. Please try again.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    }
+    setLoading(false);
+  }
+
+  async function handleVerifiedContinue() {
+    setLoading(true);
+    setError("");
+    const res = await signIn("credentials", {
+      email: email.toLowerCase().trim(),
+      password: form.password,
+      redirect: false,
+    });
+    setLoading(false);
+    if (res?.error) {
+      setError("Please verify your email first, then try again.");
+    } else {
+      setStep(3);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!email) return;
+    setLoading(true);
+    await signIn("email", {
+      email: email.toLowerCase().trim(),
+      redirect: false,
+      callbackUrl: "/event-types",
+    });
+    setLoading(false);
+  }
 
   const isOnboarding  = step >= 3 && step <= 7;
   const showLeftPanel = !isOnboarding && step !== 8;
@@ -1505,7 +1648,12 @@ export default function PagerScheduleFlow() {
             siEmail={siEmail}          setSiEmail={setSiEmail}
             siPass={siPass}            setSiPass={setSiPass}
             showSiPw={showSiPw}        setShowSiPw={setShowSiPw}
-            onContinue={next}
+            onContinue={() => setStep(2)}
+            onGoogleClick={handleGoogleAuth}
+            onSignIn={handleCredentialsSignIn}
+            onMagicLink={handleMagicLink}
+            loading={loading}
+            error={error}
           />
         )}
 
@@ -1515,7 +1663,11 @@ export default function PagerScheduleFlow() {
             email={email}
             setEmail={setEmail}
             setStep={setStep}
-            next={next}
+            onResend={handleResendVerification}
+            onVerifiedContinue={handleVerifiedContinue}
+            loading={loading}
+            error={error}
+            mode={step1Mode}
           />
         )}
 
@@ -1525,7 +1677,10 @@ export default function PagerScheduleFlow() {
             form={form}          setForm={setForm}
             showPw={showPw}      setShowPw={setShowPw}
             pwStr={pwStr}        setPwStr={setPwStr}
-            next={next}          back={back}
+            onCreateAccount={handleCreateAccount}
+            back={() => setStep(0)}
+            loading={loading}
+            error={error}
           />
         )}
 

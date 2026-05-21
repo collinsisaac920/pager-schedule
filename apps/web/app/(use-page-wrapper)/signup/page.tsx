@@ -1,5 +1,9 @@
-import { redirect } from "next/navigation";
+import PagerScheduleFlow from "@components/onboarding/PagerScheduleFlow";
 
-export default function SignupPage(): never {
-  redirect("/onboarding");
+export const metadata = {
+  title: "Sign up — PagerSchedule",
+};
+
+export default function SignupPage() {
+  return <PagerScheduleFlow />;
 }
