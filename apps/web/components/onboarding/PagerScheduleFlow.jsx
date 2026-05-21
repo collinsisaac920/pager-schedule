@@ -61,47 +61,19 @@ const btnBlue = {
 };
 
 // ─── COMPONENT: BrandLogo ─────────────────────────────────────────────────────
-// light=true  → white icon box + blue calendar + white wordmark (for blue panel)
-// light=false → blue icon box + white calendar + ink wordmark   (for white nav)
+// Uses the site's /logo.svg. light=true inverts to white for the blue panel.
 function BrandLogo({ size = "md", light = false }) {
-  const iconPx  = size === "sm" ? 28 : 36;
-  const radius  = size === "sm" ? 8  : 10;
-  const wordPx  = size === "sm" ? 16 : 20;
-  const iconBg  = light ? C.white : C.blue;
-  const stroke  = light ? C.blue  : C.white;
-  const wordCol = light ? C.white : C.ink;
-
-  // Calendar SVG: rounded rect body, two ring ticks at top, horizontal divider line
-  const s = iconPx * 0.62;
+  const width  = size === "sm" ? 110 : 140;
+  const height = size === "sm" ? 32  : 40;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div style={{
-        width: iconPx, height: iconPx, borderRadius: radius,
-        background: iconBg, flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <svg width={s} height={s} viewBox="0 0 22 22" fill="none">
-          {/* Calendar body */}
-          <rect x="2" y="4" width="18" height="16" rx="2.5"
-            stroke={stroke} strokeWidth="1.8" />
-          {/* Ring ticks */}
-          <line x1="7"  y1="2" x2="7"  y2="6" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
-          <line x1="15" y1="2" x2="15" y2="6" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
-          {/* Horizontal divider across upper third */}
-          <line x1="2" y1="9" x2="20" y2="9" stroke={stroke} strokeWidth="1.6" />
-        </svg>
-      </div>
-      <span style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: wordPx,
-        fontWeight: 600,
-        color: wordCol,
-        letterSpacing: "-0.3px",
-        whiteSpace: "nowrap",
-      }}>
-        PagerSchedule
-      </span>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo.svg"
+      alt="PagerSchedule"
+      width={width}
+      height={height}
+      style={light ? { filter: "brightness(0) invert(1)" } : undefined}
+    />
   );
 }
 
