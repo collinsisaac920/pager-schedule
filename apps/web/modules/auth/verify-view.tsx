@@ -119,6 +119,11 @@ export default function Verify({ EMAIL_FROM }: { EMAIL_FROM?: string }) {
   const { email, username, paymentStatus } = querySchema.parse(routerQuery);
   const { t } = useLocale();
   const [secondsLeft, setSecondsLeft] = useState(30);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Derive payment failed status from payment status
   const hasPaymentFailed = paymentStatus !== undefined && paymentStatus !== "paid";
@@ -156,8 +161,62 @@ export default function Verify({ EMAIL_FROM }: { EMAIL_FROM?: string }) {
     }
   }, [secondsLeft]);
 
+  // Show loading screen during hydration — search params aren't available until client mounts
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-default">
+        <div className="flex flex-col items-center gap-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Pager Schedule" width={130} height={38} />
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              border: "3px solid #E4E8F2",
+              borderTopColor: "#6366F1",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ fontSize: 13, color: "#64748B", fontFamily: "monospace", letterSpacing: 2 }}>
+            VALIDATING_TOKEN...
+          </p>
+          <p style={{ fontSize: 11, color: "#94A3B8", fontFamily: "monospace", letterSpacing: 1 }}>
+            ESTABLISHING_SECURE_SESSION...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!email) {
-    return <div>{t("invalid_link")}</div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-default">
+        <div
+          className="border-subtle bg-default flex max-w-sm flex-col items-center gap-4 rounded-xl border p-10 text-center shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Pager Schedule" width={100} height={30} style={{ opacity: 0.7 }} />
+          <p className="text-emphasis text-base font-semibold">This link has expired.</p>
+          <p className="text-subtle text-sm">Please request a new sign in link.</p>
+          <a
+            href="/auth/login"
+            style={{
+              display: "inline-block",
+              marginTop: 8,
+              padding: "10px 24px",
+              background: "#6366F1",
+              color: "#fff",
+              borderRadius: 9,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: "none",
+            }}>
+            Request new link →
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
