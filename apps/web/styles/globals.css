@@ -4,6 +4,13 @@
 @import "../../../packages/coss-ui/src/styles/globals.css";
 @import "./raqb.css";
 
+:root {
+  --brand: #6366F1;
+  --brand-hover: #4F46E5;
+  --brand-light: #EEF2FF;
+  --brand-text: #FFFFFF;
+}
+
 ::-moz-selection {
   color: var(--cal-brand-text);
   background: var(--cal-brand);

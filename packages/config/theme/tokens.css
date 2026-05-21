@@ -328,10 +328,11 @@
   --cal-text-attention: hsla(16, 62%, 28%, 1);
   --cal-text-error: hsla(0, 63%, 31%, 1);
 
-  /* Brand */
-  --cal-brand: hsla(221, 39%, 11%, 1);
-  --cal-brand-emphasis: hsla(0, 0%, 6%, 1);
-  --cal-brand-text: hsla(0, 0%, 100%, 1);
+  /* Brand — Pager Schedule Deep Indigo */
+  --cal-brand: #6366F1;
+  --cal-brand-emphasis: #4F46E5;
+  --cal-brand-text: #FFFFFF;
+  --cal-brand-subtle: #EEF2FF;
 
   /* Box Shadows */
   --shadow-dropdown: 0px 5px 20px 0px rgba(0, 0, 0, 0.10), 0px 10px 40px 0px rgba(0, 0, 0, 0.03);
@@ -452,10 +453,11 @@
   --cal-text-attention: hsla(37, 86%, 92%, 1);
   --cal-text-error: hsla(3, 66%, 93%, 1);
 
-  /* Brand */
-  --cal-brand: hsla(0, 0%, 100%, 1);
-  --cal-brand-emphasis: hsla(218, 11%, 65%, 1);
-  --cal-brand-text: hsla(0, 0%, 0%, 1);
+  /* Brand — Pager Schedule Deep Indigo (dark mode) */
+  --cal-brand: #6366F1;
+  --cal-brand-emphasis: #4F46E5;
+  --cal-brand-text: #FFFFFF;
+  --cal-brand-subtle: #1e1b4b;
 
   /* Fill Colors */
   --fill-emphasis: var(--cal-text-emphasis);

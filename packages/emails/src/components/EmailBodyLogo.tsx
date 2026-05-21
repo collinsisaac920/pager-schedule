@@ -6,8 +6,6 @@ import Row from "./Row";
 const CommentIE = ({ html = "" }) => <RawHtml html={`<!--[if mso | IE]>${html}<![endif]-->`} />;
 
 const EmailBodyLogo = () => {
-  const image = `${WEBAPP_URL}/emails/logo.png`;
-
   return (
     <>
       <CommentIE
@@ -29,7 +27,7 @@ const EmailBodyLogo = () => {
               className="mj-column-per-100 mj-outlook-group-fix"
               style={{
                 fontSize: "0px",
-                textAlign: "left",
+                textAlign: "center",
                 direction: "ltr",
                 display: "inline-block",
                 verticalAlign: "top",
@@ -44,27 +42,27 @@ const EmailBodyLogo = () => {
                     paddingTop: "32px",
                     wordBreak: "break-word",
                   }}>
-                  <Row border="0" style={{ borderCollapse: "collapse", borderSpacing: "0px" }}>
-                    <td style={{ width: "89px" }}>
-                      <a href={WEBAPP_URL} target="_blank" rel="noreferrer">
-                        <img
-                          height="19"
-                          src={image}
-                          style={{
-                            border: "0",
-                            display: "block",
-                            outline: "none",
-                            textDecoration: "none",
-                            height: "19px",
-                            width: "100%",
-                            fontSize: "13px",
-                          }}
-                          width="89"
-                          alt=""
-                        />
-                      </a>
-                    </td>
-                  </Row>
+                  <a href={WEBAPP_URL} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
+                    <span
+                      style={{
+                        fontFamily: "Inter, Helvetica, sans-serif",
+                        fontSize: "16px",
+                        fontWeight: "800",
+                        color: "#6366F1",
+                        letterSpacing: "-0.5px",
+                      }}>
+                      Pager Schedule
+                    </span>
+                  </a>
+                  <div
+                    style={{
+                      fontFamily: "Helvetica, sans-serif",
+                      fontSize: "11px",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}>
+                    ◎ This email contains zero tracking
+                  </div>
                 </td>
               </Row>
             </div>

@@ -30,15 +30,15 @@ const navbar: React.ReactElement = (
     logo={
       <>
         <img
-          src="/cal-docs-logo.svg"
-          alt="Cal.diy Docs"
+          src="/logo.svg"
+          alt="Pager Schedule Docs"
           height={26}
           className="logo-light"
           style={{ height: 26 }}
         />
         <img
-          src="/cal-docs-logo-white.svg"
-          alt="Cal.diy Docs"
+          src="/logo-white.svg"
+          alt="Pager Schedule Docs"
           height={26}
           className="logo-dark"
           style={{ height: 26 }}
@@ -51,15 +51,14 @@ const navbar: React.ReactElement = (
 const footer: React.ReactElement = (
   <Footer>
     <small>
-      Cal.diy is the open source community edition of Cal.com. Cal.diy® and Cal®
-      are a registered trademark by Cal.com, Inc. All rights reserved.
+      © {new Date().getFullYear()} Pager Schedule. Privacy-first scheduling.
     </small>
   </Footer>
 );
 
 export const metadata: { title: string; description: string } = {
-  title: "Cal.diy Docs",
-  description: "Cal.diy self-hosting documentation",
+  title: "Pager Schedule Docs",
+  description: "Pager Schedule self-hosting documentation",
 };
 
 export default async function RootLayout({

@@ -32,44 +32,39 @@ export const viewport = {
   themeColor: [
     {
       media: "(prefers-color-scheme: light)",
-      color: "#f9fafb",
+      color: "#6366F1",
     },
     {
       media: "(prefers-color-scheme: dark)",
-      color: "#1C1C1C",
+      color: "#6366F1",
     },
   ],
 };
 
 export const metadata = {
+  title: {
+    default: "Pager Schedule",
+    template: "%s | Pager Schedule",
+  },
+  description: "Privacy-first scheduling. Zero tracking. Your meetings belong to you.",
   icons: {
-    icon: "/api/logo?type=favicon-32",
-    apple: "/api/logo?type=apple-touch-icon",
+    icon: "/logo-icon.svg",
+    apple: "/logo-icon.svg",
     other: [
       {
         rel: "icon-mask",
-        url: "/safari-pinned-tab.svg",
-        color: "#000000",
-      },
-      {
-        url: "/api/logo?type=favicon-16",
-        sizes: "16x16",
-        type: "image/png",
-      },
-      {
-        url: "/api/logo?type=favicon-32",
-        sizes: "32x32",
-        type: "image/png",
+        url: "/logo-icon.svg",
+        color: "#6366F1",
       },
     ],
   },
   manifest: "/site.webmanifest",
   other: {
-    "application-TileColor": "#ff0000",
+    "application-TileColor": "#6366F1",
   },
   twitter: {
-    site: "@calcom",
-    creator: "@calcom",
+    site: "@pagerschedule",
+    creator: "@pagerschedule",
     card: "summary_large_image",
   },
   robots: {
