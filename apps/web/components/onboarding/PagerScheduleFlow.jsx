@@ -439,6 +439,11 @@ function Step0({
         boxShadow: "0 4px 40px rgba(0,80,200,0.09)",
       }}>
 
+        {/* ── Logo (visible when LeftPanel is hidden on narrow screens) ── */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+          <BrandLogo size="sm" />
+        </div>
+
         {/* ── Tab row ── */}
         <div style={{
           display: "flex",
@@ -647,6 +652,11 @@ function Step1({ email, setEmail, setStep, onResend, onVerifiedContinue, loading
     <div style={wrapSt}>
       <div style={cardSt}>
 
+        {/* Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+          <BrandLogo size="sm" />
+        </div>
+
         {/* Icon block */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{
@@ -782,6 +792,11 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAcco
     <div style={wrapSt}>
       <div style={cardSt}>
 
+        {/* Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+          <BrandLogo size="sm" />
+        </div>
+
         <h2 style={{
           fontFamily: "'DM Serif Display', serif",
           fontSize: 26, fontWeight: 400,
@@ -799,6 +814,8 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAcco
             <label style={labelSt}>First name</label>
             <input
               type="text"
+              name="given-name"
+              autoComplete="given-name"
               placeholder="Alex"
               value={form.firstName}
               onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
@@ -815,6 +832,8 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAcco
             <label style={labelSt}>Last name</label>
             <input
               type="text"
+              name="family-name"
+              autoComplete="family-name"
               placeholder="Rivera"
               value={form.lastName}
               onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
@@ -835,6 +854,8 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAcco
           <div style={{ position: "relative" }}>
             <input
               type={showPw ? "text" : "password"}
+              name="new-password"
+              autoComplete="new-password"
               placeholder="Create a strong password"
               value={form.password}
               onChange={e => {
@@ -1522,7 +1543,7 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
   async function handleGoogleAuth() {
     setLoading(true);
     setError("");
-    await signIn("google", { callbackUrl: "/event-types" });
+    await signIn("google", { callbackUrl: "/getting-started" });
     setLoading(false);
   }
 
