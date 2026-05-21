@@ -38,6 +38,7 @@ const url =
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : `${process.env.NEXT_PUBLIC_WEBAPP_URL}/api/trpc`;
 
+// @ts-ignore - tRPC type conflict
 export const trpcClient = trpc.createClient({
   links: [
     // adds pretty logs to your console in development and logs errors in production

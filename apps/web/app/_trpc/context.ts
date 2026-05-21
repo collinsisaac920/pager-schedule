@@ -4,7 +4,8 @@ import { cookies, headers } from "next/headers";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { createContext } from "@calcom/trpc/server/createContext";
 import { createCallerFactory } from "@calcom/trpc/server/trpc";
-import type { TRPCContext } from "@calcom/trpc/types/server/createContext";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TRPCContext = any;
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 

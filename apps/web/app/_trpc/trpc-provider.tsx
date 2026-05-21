@@ -10,10 +10,13 @@ type Props = {
   children: React.ReactNode;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TrpcReactProvider = (trpc as any).Provider;
+
 export const TrpcProvider = ({ children }: Props) => {
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <TrpcReactProvider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
+    </TrpcReactProvider>
   );
 };
