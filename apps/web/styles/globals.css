@@ -498,8 +498,18 @@ body {
 [aria-current="page"] .text-emphasis,
 nav [aria-current="page"] {
   color: #6366F1 !important;
+  background-color: #EEF2FF !important;
+}
+
+.dark nav [aria-current="page"] {
+  background-color: #312e81 !important;
+  color: #818CF8 !important;
 }
 
 nav [aria-current="page"] svg {
   color: #6366F1 !important;
+}
+
+.dark nav [aria-current="page"] svg {
+  color: #818CF8 !important;
 }

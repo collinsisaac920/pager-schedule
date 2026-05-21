@@ -14,10 +14,10 @@
     "Courier New", monospace;
   --color-sidebar-ring: #6366F1;
   --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-accent-foreground: #6366F1;
+  --color-sidebar-accent: #EEF2FF;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-primary: #6366F1;
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
@@ -107,8 +107,8 @@
   );
   --sidebar-primary: #6366F1;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: --alpha(var(--color-black) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-800);
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #6366F1;
   --sidebar-border: --alpha(var(--color-black) / 6%);
   --sidebar-ring: var(--color-neutral-400);
   --code: var(--color-white);
@@ -171,8 +171,8 @@
   );
   --sidebar-primary: #6366F1;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: --alpha(var(--color-white) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-100);
+  --sidebar-accent: #312e81;
+  --sidebar-accent-foreground: #818CF8;
   --sidebar-border: --alpha(var(--color-white) / 5%);
   --sidebar-ring: var(--color-neutral-400);
   --code: color-mix(in srgb, var(--background) 98%, var(--color-white));

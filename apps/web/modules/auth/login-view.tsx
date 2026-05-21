@@ -311,7 +311,7 @@ export default function Login({
               {/* Submit Button */}
               <Button
                 type="submit"
-                variant="outline"
+                variant="default"
                 className="mt-8 w-full"
                 disabled={formState.isSubmitting}>
                 {twoFactorRequired ? t("submit") : t("continue")}

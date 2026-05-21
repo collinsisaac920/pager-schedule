@@ -42,9 +42,9 @@
   --color-subtle: var(--cal-bg-subtle);
   --color-cal-muted: var(--cal-bg-muted);
   --color-inverted: var(--cal-bg-inverted);
-  --color-primary-default: var(--cal-bg-primary);
-  --color-primary-emphasis: var(--cal-bg-primary-emphasis);
-  --color-primary-muted: var(--cal-bg-primary-muted);
+  --color-primary-default: #6366F1;
+  --color-primary-emphasis: #4F46E5;
+  --color-primary-muted: #EEF2FF;
   --color-brand: #6366F1;
   --color-brand-default: #6366F1;
   --color-brand-emphasis: #4F46E5;
