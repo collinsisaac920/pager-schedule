@@ -1,9 +1,4 @@
 "use client";
-// ─────────────────────────────────────────────────────────────────────────────
-// PagerScheduleFlow.jsx — Part 1 of 4
-// Multi-step signup / sign-in flow — Step 0 (Landing) + shared infrastructure
-// Parts 2–4 will add steps 1–8 (see TODO comments below).
-// ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 
@@ -62,7 +57,6 @@ const btnBlue = {
 };
 
 // ─── COMPONENT: BrandLogo ─────────────────────────────────────────────────────
-// Uses the site's /logo.svg. light=true inverts to white for the blue panel.
 function BrandLogo({ size = "md", light = false }) {
   const width  = size === "sm" ? 110 : 140;
   const height = size === "sm" ? 32  : 40;
@@ -82,22 +76,10 @@ function BrandLogo({ size = "md", light = false }) {
 function GoogleSvg() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.342 17.64 12.034 17.64 9.2z"
-        fill="#4285F4"
-      />
-      <path
-        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
-        fill="#34A853"
-      />
-      <path
-        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"
-        fill="#EA4335"
-      />
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.342 17.64 12.034 17.64 9.2z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
     </svg>
   );
 }
@@ -120,14 +102,12 @@ function EyeBtn({ show, onToggle }) {
       }}
     >
       {show ? (
-        // Eye-slash: password is visible, click to hide
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="#9aabcc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
           <line x1="1" y1="1" x2="23" y2="23"/>
         </svg>
       ) : (
-        // Eye: password is hidden, click to reveal
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="#9aabcc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -201,9 +181,6 @@ function BackBtn({ onClick }) {
 }
 
 // ─── COMPONENT: FocusInput ───────────────────────────────────────────────────
-// Manages its own focus border/shadow state.
-// suffix = inside-input right element (e.g. EyeBtn)
-// right  = label-row right element (e.g. Forgot password link)
 function FocusInput({ id, label, type = "text", placeholder, value, onChange, suffix, right }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -246,9 +223,21 @@ function FocusInput({ id, label, type = "text", placeholder, value, onChange, su
   );
 }
 
-// ─── COMPONENT: LeftPanel ────────────────────────────────────────────────────
-// Shown on steps 0–2 (split layout). 46% width, solid blue background.
-function LeftPanel() {
+// ─── HOOK: useWindowWidth ─────────────────────────────────────────────────────
+function useWindowWidth() {
+  const [w, setW] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return w;
+}
+
+// ─── COMPONENT: LeftPanel (desktop only, steps 0–2) ───────────────────────────
+function LeftPanel({ onBackToLanding }) {
   const checkItems = [
     "One link for all your availability",
     "Syncs with Google, Outlook & Apple Calendar",
@@ -286,17 +275,47 @@ function LeftPanel() {
         pointerEvents: "none",
       }} />
 
-      {/* TOP — brand logo */}
+      {/* TOP — back to home button (no logo) */}
       <div style={{ position: "relative", zIndex: 1 }}>
-        <BrandLogo light={true} />
+        <button
+          type="button"
+          onClick={onBackToLanding}
+          style={{
+            color: "rgba(255,255,255,0.55)",
+            fontSize: 12.5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            padding: 0,
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          ← Back to home
+        </button>
       </div>
 
-      {/* MIDDLE — headline, body, checklist */}
+      {/* MIDDLE — badge, headline, body, checklist */}
       <div style={{
         position: "relative", zIndex: 1,
         flex: 1, display: "flex", flexDirection: "column",
         justifyContent: "center", padding: "40px 0",
       }}>
+        {/* Badge pill */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 7,
+          background: "rgba(255,255,255,0.12)", borderRadius: 99,
+          padding: "5px 13px", marginBottom: 20,
+          width: "fit-content",
+        }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#7dffb3" }} />
+          <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.9)" }}>
+            Free forever · No card needed
+          </span>
+        </div>
+
         <h1 style={{
           fontFamily: "'DM Serif Display', serif",
           fontSize: "clamp(30px,3vw,44px)",
@@ -305,11 +324,11 @@ function LeftPanel() {
           lineHeight: 1.2,
           marginBottom: 18, marginTop: 0,
         }}>
-          Scheduling that{" "}
+          One link.
+          <br />
           <em style={{ fontStyle: "italic", color: "rgba(255,255,255,0.72)" }}>
-            works for you,
-          </em>{" "}
-          not against you.
+            Every meeting.
+          </em>
         </h1>
 
         <p style={{
@@ -319,8 +338,8 @@ function LeftPanel() {
           maxWidth: 340,
           margin: 0,
         }}>
-          Connect your calendar, share your link, and let people book time
-          without the back-and-forth.
+          Smart scheduling that connects every calendar,
+          automates reminders, and eliminates the back-and-forth.
         </p>
 
         {/* Checklist */}
@@ -376,6 +395,143 @@ function LeftPanel() {
   );
 }
 
+// ─── COMPONENT: MobileHero (mobile only, steps 0–2) ───────────────────────────
+function MobileHero({ onBackToLanding }) {
+  const calSvg = (size) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="rgba(255,255,255,0.45)" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+
+  return (
+    <div style={{
+      background: "linear-gradient(145deg, #0057e0 0%, #0069ff 50%, #3385ff 100%)",
+      padding: "44px 28px 40px",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Decorative blobs */}
+      <div style={{
+        position: "absolute",
+        width: 300, height: 300, borderRadius: "50%",
+        background: "rgba(255,255,255,0.07)",
+        top: -80, right: -60,
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute",
+        width: 200, height: 200, borderRadius: "50%",
+        background: "rgba(255,255,255,0.05)",
+        bottom: -60, left: -40,
+        pointerEvents: "none",
+      }} />
+
+      {/* Floating calendar shapes */}
+      <div style={{
+        position: "absolute", width: 32, height: 32, borderRadius: 7,
+        top: "14%", right: "8%",
+        border: "1.5px solid rgba(255,255,255,0.22)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {calSvg(16)}
+      </div>
+      <div style={{
+        position: "absolute", width: 22, height: 22, borderRadius: 6,
+        bottom: "18%", right: "18%",
+        border: "1.5px solid rgba(255,255,255,0.22)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {calSvg(11)}
+      </div>
+      <div style={{
+        position: "absolute", width: 26, height: 26, borderRadius: 7,
+        top: "55%", left: "4%",
+        border: "1.5px solid rgba(255,255,255,0.22)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {calSvg(13)}
+      </div>
+
+      {/* Back button */}
+      <button
+        type="button"
+        onClick={onBackToLanding}
+        style={{
+          color: "rgba(255,255,255,0.6)",
+          fontSize: 13,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          marginBottom: 28,
+          position: "relative",
+          zIndex: 1,
+          display: "block",
+          padding: 0,
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        ← Back
+      </button>
+
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {/* Badge pill */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 7,
+          background: "rgba(255,255,255,0.15)", borderRadius: 99,
+          padding: "5px 13px", marginBottom: 18,
+        }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#7dffb3" }} />
+          <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.9)" }}>
+            Free forever · No card needed
+          </span>
+        </div>
+
+        <h1 style={{
+          fontFamily: "'DM Serif Display', serif",
+          fontSize: 34, lineHeight: 1.15,
+          color: "white", marginBottom: 12, marginTop: 0,
+        }}>
+          One link.
+          <br />
+          <em style={{ fontStyle: "italic", color: "rgba(255,255,255,0.72)" }}>
+            Every meeting.
+          </em>
+        </h1>
+
+        <p style={{
+          fontSize: 14.5,
+          color: "rgba(255,255,255,0.72)",
+          lineHeight: 1.6,
+          maxWidth: 300,
+          marginBottom: 24,
+          marginTop: 0,
+        }}>
+          Smart scheduling for modern teams — share your link and let people book instantly.
+        </p>
+
+        {/* Stat pills */}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {["📅 10M+ users", "⚡ Setup in 2 min", "🔒 SOC2 certified"].map((pill, i) => (
+            <div key={i} style={{
+              background: "rgba(255,255,255,0.12)", borderRadius: 99,
+              padding: "5px 12px", fontSize: 12,
+              color: "rgba(255,255,255,0.85)", fontWeight: 500,
+            }}>
+              {pill}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HELPER: calcStr ─────────────────────────────────────────────────────────
 function calcStr(val) {
   let score = 0;
@@ -396,9 +552,32 @@ function Step0({
   onContinue,
   onGoogleClick, onSignIn, onMagicLink,
   loading, error,
+  isMobile,
 }) {
   const [gHov,     setGHov]     = useState(false);
   const [magicHov, setMagicHov] = useState(false);
+
+  const wrapSt = {
+    flex: 1, display: "flex",
+    alignItems: isMobile ? "flex-start" : "center",
+    justifyContent: isMobile ? "flex-start" : "center",
+    padding: isMobile ? "24px 0 40px" : "48px 36px",
+    minHeight: isMobile ? "auto" : "100vh",
+    background: C.white,
+  };
+
+  const cardSt = isMobile ? {
+    background: C.white,
+    width: "100%",
+    padding: "32px 24px",
+  } : {
+    background: C.white,
+    borderRadius: 20,
+    padding: "44px",
+    width: "100%",
+    maxWidth: 448,
+    boxShadow: "0 4px 40px rgba(0,80,200,0.09)",
+  };
 
   const googleBtnSt = {
     display: "flex", alignItems: "center", justifyContent: "center",
@@ -425,26 +604,15 @@ function Step0({
   };
 
   return (
-    <div style={{
-      flex: 1, display: "flex",
-      alignItems: "center", justifyContent: "center",
-      padding: "48px 36px",
-      background: C.mist,
-    }}>
-      <div style={{
-        background: C.white,
-        borderRadius: 20,
-        padding: "40px 44px",
-        width: "100%", maxWidth: 448,
-        boxShadow: "0 4px 40px rgba(0,80,200,0.09)",
-      }}>
+    <div style={wrapSt}>
+      <div style={cardSt}>
 
-        {/* ── Logo (visible when LeftPanel is hidden on narrow screens) ── */}
+        {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
           <BrandLogo size="sm" />
         </div>
 
-        {/* ── Tab row ── */}
+        {/* Tab row */}
         <div style={{
           display: "flex",
           background: C.mist,
@@ -474,7 +642,7 @@ function Step0({
           ))}
         </div>
 
-        {/* ── CREATE ACCOUNT TAB ── */}
+        {/* CREATE ACCOUNT TAB */}
         {landingTab === "signup" && (
           <>
             <h2 style={{
@@ -532,7 +700,7 @@ function Step0({
           </>
         )}
 
-        {/* ── SIGN IN TAB ── */}
+        {/* SIGN IN TAB */}
         {landingTab === "signin" && (
           <>
             <h2 style={{
@@ -633,17 +801,24 @@ function Step0({
 }
 
 // ─── STEP 1 — EMAIL VERIFICATION ─────────────────────────────────────────────
-function Step1({ email, setEmail, setStep, onResend, onVerifiedContinue, loading, error, mode }) {
+function Step1({ email, setEmail, setStep, onResend, onVerifiedContinue, loading, error, mode, isMobile }) {
   const wrapSt = {
     flex: 1, display: "flex",
-    alignItems: "center", justifyContent: "center",
-    padding: "48px 36px",
-    background: C.mist,
+    alignItems: isMobile ? "flex-start" : "center",
+    justifyContent: isMobile ? "flex-start" : "center",
+    padding: isMobile ? "24px 0 40px" : "48px 36px",
+    minHeight: isMobile ? "auto" : "100vh",
+    background: C.white,
   };
-  const cardSt = {
+
+  const cardSt = isMobile ? {
+    background: C.white,
+    width: "100%",
+    padding: "32px 24px",
+  } : {
     background: C.white,
     borderRadius: 20,
-    padding: "40px 44px",
+    padding: "44px",
     width: "100%", maxWidth: 448,
     boxShadow: "0 4px 40px rgba(0,80,200,0.09)",
   };
@@ -765,7 +940,7 @@ function Step1({ email, setEmail, setStep, onResend, onVerifiedContinue, loading
 }
 
 // ─── STEP 2 — PROFILE SETUP ───────────────────────────────────────────────────
-function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAccount, back, loading, error }) {
+function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAccount, back, loading, error, isMobile }) {
   const [fnFocus, setFnFocus] = useState(false);
   const [lnFocus, setLnFocus] = useState(false);
   const [pwFocus, setPwFocus] = useState(false);
@@ -776,14 +951,21 @@ function Step2({ form, setForm, showPw, setShowPw, pwStr, setPwStr, onCreateAcco
 
   const wrapSt = {
     flex: 1, display: "flex",
-    alignItems: "center", justifyContent: "center",
-    padding: "48px 36px",
-    background: C.mist,
+    alignItems: isMobile ? "flex-start" : "center",
+    justifyContent: isMobile ? "flex-start" : "center",
+    padding: isMobile ? "24px 0 40px" : "48px 36px",
+    minHeight: isMobile ? "auto" : "100vh",
+    background: C.white,
   };
-  const cardSt = {
+
+  const cardSt = isMobile ? {
+    background: C.white,
+    width: "100%",
+    padding: "32px 24px",
+  } : {
     background: C.white,
     borderRadius: 20,
-    padding: "40px 44px",
+    padding: "44px",
     width: "100%", maxWidth: 448,
     boxShadow: "0 4px 40px rgba(0,80,200,0.09)",
   };
@@ -1007,13 +1189,13 @@ function SelectTile({ emoji, label, selected, onClick, size = "normal" }) {
 }
 
 // ─── COMPONENT: OnboardingNav ─────────────────────────────────────────────────
-function OnboardingNav({ onboardingStep, setStep }) {
+function OnboardingNav({ onboardingStep, setStep, isMobile }) {
   return (
     <div style={{
       width: "100%",
       background: C.white,
       borderBottom: `1px solid ${C.border}`,
-      padding: "18px 40px",
+      padding: isMobile ? "14px 20px" : "18px 40px",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
@@ -1030,7 +1212,7 @@ function OnboardingNav({ onboardingStep, setStep }) {
           fontFamily: "'DM Sans', sans-serif",
         }}
       >
-        Skip for now
+        {isMobile ? "Skip" : "Skip for now"}
       </button>
     </div>
   );
@@ -1185,8 +1367,6 @@ function Step5({ role, setRole, next, back }) {
 }
 
 // ─── DATA: Calendars + Meetings ──────────────────────────────────────────────
-// integrationSlug = the Cal.com app-store slug for OAuth-based calendars.
-// null = credential-based (Apple, CalDAV) or no direct integration.
 const CALENDARS = [
   { id: "google",   label: "Google Calendar",   sub: "Gmail / Google Workspace",       integrationSlug: "googlecalendar" },
   { id: "outlook",  label: "Outlook Calendar",  sub: "Microsoft 365 / Outlook.com",    integrationSlug: "office365calendar" },
@@ -1522,12 +1702,11 @@ function Step8({ form }) {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function PagerScheduleFlow({ initialTab = "signup" }) {
-  // ── Global state ──
   const [step,          setStep]          = useState(0);
   const [landingTab,    setLandingTab]    = useState(initialTab);
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState("");
-  const [step1Mode,     setStep1Mode]     = useState("signup"); // "signup" | "magic"
+  const [step1Mode,     setStep1Mode]     = useState("signup");
   const [email,         setEmail]         = useState("");
   const [siEmail,       setSiEmail]       = useState("");
   const [siPass,        setSiPass]        = useState("");
@@ -1541,10 +1720,12 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
   const [connectedCals, setConnectedCals] = useState([]);
   const [meetingTypes,  setMeetingTypes]  = useState([]);
 
+  const isMobile = useWindowWidth() < 768;
+
   const next = () => setStep(s => s + 1);
   const back = () => setStep(s => s - 1);
 
-  // ── Restore step + connected state after OAuth redirect returns ──
+  // Restore step + connected state after OAuth redirect returns
   useEffect(() => {
     const savedStep = sessionStorage.getItem("pager_step");
     const savedCal  = sessionStorage.getItem("pager_cal");
@@ -1594,7 +1775,6 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
     if (cal.integrationSlug) {
       connectIntegration({ integrationSlug: cal.integrationSlug, id: cal.id, returnStep: 6, storageKey: "pager_cal" });
     } else {
-      // Credential-based calendars: open settings in new tab
       window.open("/settings/integrations", "_blank");
     }
   }
@@ -1716,12 +1896,11 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
     setLoading(false);
   }
 
-  const isOnboarding  = step >= 3 && step <= 7;
-  const showLeftPanel = !isOnboarding && step !== 8;
+  const isOnboardingOrDone = step >= 3;
+  const showLeftPanel = !isOnboardingOrDone;
 
   return (
     <>
-      {/* ── Google Fonts + global reset + custom scrollbar ── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1734,14 +1913,22 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
 
       <div style={{
         display: "flex",
+        flexDirection: isMobile ? "column" : "row",
         minHeight: "100vh",
         fontFamily: "'DM Sans', sans-serif",
       }}>
 
-        {/* ── Left blue panel (steps 0–2) ── */}
-        {showLeftPanel && <LeftPanel />}
+        {/* Mobile hero banner (steps 0–2 only) */}
+        {showLeftPanel && isMobile && (
+          <MobileHero onBackToLanding={() => setStep(0)} />
+        )}
 
-        {/* ── Step 0 — Landing ── */}
+        {/* Desktop left panel (steps 0–2 only) */}
+        {showLeftPanel && !isMobile && (
+          <LeftPanel onBackToLanding={() => setStep(0)} />
+        )}
+
+        {/* Step 0 — Landing */}
         {step === 0 && (
           <Step0
             landingTab={landingTab}    setLandingTab={setLandingTab}
@@ -1755,10 +1942,11 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
             onMagicLink={handleMagicLink}
             loading={loading}
             error={error}
+            isMobile={isMobile}
           />
         )}
 
-        {/* ── Step 1 — Email Verification ── */}
+        {/* Step 1 — Email Verification */}
         {step === 1 && (
           <Step1
             email={email}
@@ -1769,10 +1957,11 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
             loading={loading}
             error={error}
             mode={step1Mode}
+            isMobile={isMobile}
           />
         )}
 
-        {/* ── Step 2 — Profile Setup ── */}
+        {/* Step 2 — Profile Setup */}
         {step === 2 && (
           <Step2
             form={form}          setForm={setForm}
@@ -1782,13 +1971,14 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
             back={() => setStep(0)}
             loading={loading}
             error={error}
+            isMobile={isMobile}
           />
         )}
 
-        {/* ── Steps 3–5 — Onboarding (Usage Intent, Features, Role) ── */}
+        {/* Steps 3–5 — Onboarding (Usage Intent, Features, Role) */}
         {(step === 3 || step === 4 || step === 5) && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", background: C.white }}>
-            <OnboardingNav onboardingStep={step - 2} setStep={setStep} />
+            <OnboardingNav onboardingStep={step - 2} setStep={setStep} isMobile={isMobile} />
             {step === 3 && (
               <Step3
                 form={form}
@@ -1811,10 +2001,10 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
           </div>
         )}
 
-        {/* ── Steps 6–7 — Onboarding (Calendar Connect, Meeting Location) ── */}
+        {/* Steps 6–7 — Onboarding (Calendar Connect, Meeting Location) */}
         {(step === 6 || step === 7) && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", background: C.white }}>
-            <OnboardingNav onboardingStep={step - 2} setStep={setStep} />
+            <OnboardingNav onboardingStep={step - 2} setStep={setStep} isMobile={isMobile} />
             {step === 6 && (
               <Step6
                 connectedCals={connectedCals} setConnectedCals={setConnectedCals}
@@ -1832,7 +2022,7 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
           </div>
         )}
 
-        {/* ── Step 8 — Done ── */}
+        {/* Step 8 — Done */}
         {step === 8 && <Step8 form={form} />}
 
       </div>
