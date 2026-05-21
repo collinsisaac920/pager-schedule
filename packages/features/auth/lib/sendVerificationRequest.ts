@@ -22,7 +22,7 @@ const sendVerificationRequest = async ({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `${APP_NAME} <${process.env.EMAIL_FROM || "noreply@pagerschedule.com"}>`,
+      from: `${APP_NAME} <${process.env.EMAIL_FROM || "noreply@apppager.com"}>`,
       to: [identifier],
       subject: `Sign in to ${APP_NAME}`,
       html: `
