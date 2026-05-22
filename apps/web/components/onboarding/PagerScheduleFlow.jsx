@@ -549,6 +549,7 @@ function Step0({
   siEmail, setSiEmail,
   siPass, setSiPass,
   showSiPw, setShowSiPw,
+  twoFactorRequired, siTotp, setSiTotp,
   onContinue,
   onGoogleClick, onSignIn, onMagicLink,
   loading, error,
@@ -735,25 +736,38 @@ function Step0({
               onChange={e => setSiEmail(e.target.value)}
             />
 
-            <FocusInput
-              id="si-pass"
-              label="Password"
-              type={showSiPw ? "text" : "password"}
-              placeholder="••••••••"
-              value={siPass}
-              onChange={e => setSiPass(e.target.value)}
-              suffix={
-                <EyeBtn show={showSiPw} onToggle={() => setShowSiPw(v => !v)} />
-              }
-              right={
-                <a
-                  href="/auth/forgot-password"
-                  style={{ fontSize: 13, color: C.blue, textDecoration: "none" }}
-                >
-                  Forgot password?
-                </a>
-              }
-            />
+            {!twoFactorRequired && (
+              <FocusInput
+                id="si-pass"
+                label="Password"
+                type={showSiPw ? "text" : "password"}
+                placeholder="••••••••"
+                value={siPass}
+                onChange={e => setSiPass(e.target.value)}
+                suffix={
+                  <EyeBtn show={showSiPw} onToggle={() => setShowSiPw(v => !v)} />
+                }
+                right={
+                  <a
+                    href="/auth/forgot-password"
+                    style={{ fontSize: 13, color: C.blue, textDecoration: "none" }}
+                  >
+                    Forgot password?
+                  </a>
+                }
+              />
+            )}
+
+            {twoFactorRequired && (
+              <FocusInput
+                id="si-totp"
+                label="Two-factor authentication code"
+                type="text"
+                placeholder="000000"
+                value={siTotp}
+                onChange={e => setSiTotp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              />
+            )}
 
             {error && landingTab === "signin" && (
               <p style={{ fontSize: 13, color: C.red, marginBottom: 12 }}>{error}</p>
@@ -761,7 +775,7 @@ function Step0({
 
             <ContinueBtn
               label={loading ? "Signing in…" : "Sign in →"}
-              disabled={!siEmail.trim() || !siPass || loading}
+              disabled={!siEmail.trim() || !siPass || (twoFactorRequired && siTotp.length < 6) || loading}
               onClick={onSignIn}
             />
 
@@ -1711,6 +1725,8 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
   const [siEmail,       setSiEmail]       = useState("");
   const [siPass,        setSiPass]        = useState("");
   const [showSiPw,      setShowSiPw]      = useState(false);
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [siTotp,        setSiTotp]        = useState("");
   const [form,          setForm]          = useState({ firstName: "", lastName: "", password: "" });
   const [showPw,        setShowPw]        = useState(false);
   const [pwStr,         setPwStr]         = useState(0);
@@ -1800,11 +1816,19 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
     const res = await signIn("credentials", {
       email: siEmail.toLowerCase().trim(),
       password: siPass,
+      ...(siTotp ? { totpCode: siTotp } : {}),
       redirect: false,
     });
     setLoading(false);
-    if (res?.error || res?.ok === false) {
-      setError("Incorrect email or password. Please try again.");
+    if (res?.error === "second-factor-required") {
+      setTwoFactorRequired(true);
+      setError("");
+    } else if (res?.error || res?.ok === false) {
+      if (twoFactorRequired) {
+        setError("Incorrect authentication code. Please try again.");
+      } else {
+        setError("Incorrect email or password. Please try again.");
+      }
     } else {
       // Respect callbackUrl from query params (set by email verification redirect),
       // otherwise let the root page route the user based on their onboarding status.
@@ -1950,6 +1974,8 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
             siEmail={siEmail}          setSiEmail={setSiEmail}
             siPass={siPass}            setSiPass={setSiPass}
             showSiPw={showSiPw}        setShowSiPw={setShowSiPw}
+            twoFactorRequired={twoFactorRequired}
+            siTotp={siTotp}            setSiTotp={setSiTotp}
             onContinue={() => setStep(2)}
             onGoogleClick={handleGoogleAuth}
             onSignIn={handleCredentialsSignIn}
