@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -12,6 +13,9 @@ interface PagerScheduleAppStoreDashboardProps {
 }
 
 function WaveformLogo({ size = 34 }: { size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div
@@ -19,13 +23,13 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           width: size,
           height: size,
           borderRadius: Math.round(size * 0.265),
-          background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+          background: `linear-gradient(135deg, ${theme.brandPrimary} 0%, ${theme.brandPrimary}cc 100%)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: Math.round(size * 0.09),
           flexShrink: 0,
-          boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
+          boxShadow: `0 4px 14px ${alpha(theme.brandPrimary, 0.3)}`,
         }}>
         {([0.55, 1, 0.75, 0.45] as number[]).map((h, i) => (
           <span
@@ -45,7 +49,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.47),
             fontWeight: 700,
-            color: "#111827",
+            color: `${theme.inkColor}`,
             letterSpacing: "-0.3px",
             lineHeight: 1.1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -56,7 +60,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.27),
             fontWeight: 700,
-            color: "#6366f1",
+            color: `${theme.brandPrimary}`,
             letterSpacing: Math.round(size * 0.053),
             lineHeight: 1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -115,6 +119,9 @@ const ICONS = {
 // ── App Logo Components ────────────────────────────────────────────────────
 
 function AppleCalendarLogo({ size = 52 }: { size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div
       style={{
@@ -122,11 +129,11 @@ function AppleCalendarLogo({ size = 52 }: { size?: number }) {
         height: size,
         borderRadius: Math.round(size * 0.2),
         overflow: "hidden",
-        border: "1px solid #e5e7eb",
+        border: `1px solid ${theme.border}`,
         boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
         display: "flex",
         flexDirection: "column",
-        background: "white",
+        background: theme.cardBg,
         flexShrink: 0,
       }}>
       <div
@@ -152,7 +159,7 @@ function AppleCalendarLogo({ size = 52 }: { size?: number }) {
       <div
         style={{
           flex: 1,
-          background: "white",
+          background: theme.cardBg,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -205,6 +212,9 @@ function ExchangeLogo({ size = 52 }: { size?: number }) {
 }
 
 function AppLogo({ logo, size = 52 }: { logo: string; size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   if (logo === "apple") return <AppleCalendarLogo size={size} />;
   if (logo === "exchange" || logo === "exchange2016") return <ExchangeLogo size={size} />;
   return (
@@ -213,7 +223,7 @@ function AppLogo({ logo, size = 52 }: { logo: string; size?: number }) {
         width: size,
         height: size,
         borderRadius: Math.round(size * 0.2),
-        background: "linear-gradient(135deg, #6366f1, #818cf8)",
+        background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
         flexShrink: 0,
       }}
     />
@@ -222,48 +232,59 @@ function AppLogo({ logo, size = 52 }: { logo: string; size?: number }) {
 
 // ── Static data ────────────────────────────────────────────────────────────
 
-const FEATURED_CATS = [
-  {
-    name: "Calendar",
-    icon: ICONS.calendar,
-    color: "#6366f1",
-    bg: "#f0effe",
-    count: 3,
-    href: "/apps/categories/calendar",
-  },
-  {
-    name: "Video",
-    icon: "M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z",
-    color: "#0069ff",
-    bg: "#e8f0ff",
-    count: 5,
-    href: "/apps/categories/video",
-  },
-  {
-    name: "Automation",
-    icon: "M13 10V3L4 14h7v7l9-11h-7z",
-    color: "#00c48c",
-    bg: "#e6faf4",
-    count: 4,
-    href: "/apps/categories/automation",
-  },
-  {
-    name: "Payments",
-    icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
-    color: "#f59e0b",
-    bg: "#fef3c7",
-    count: 2,
-    href: "/apps/categories/payment",
-  },
-  {
-    name: "CRM",
-    icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
-    color: "#8b5cf6",
-    bg: "#ede9fe",
-    count: 6,
-    href: "/apps/categories/crm",
-  },
-];
+type FeaturedCat = {
+  name: string;
+  icon: string;
+  color: string;
+  bg: string;
+  count: number;
+  href: string;
+};
+
+function getFeaturedCats(t: { brandPrimary: string; brandSoft: string; brandAccent: string; successColor: string }): FeaturedCat[] {
+  return [
+    {
+      name: "Calendar",
+      icon: ICONS.calendar,
+      color: t.brandPrimary,
+      bg: t.brandSoft,
+      count: 3,
+      href: "/apps/categories/calendar",
+    },
+    {
+      name: "Video",
+      icon: "M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z",
+      color: t.brandAccent,
+      bg: "#e8f0ff",
+      count: 5,
+      href: "/apps/categories/video",
+    },
+    {
+      name: "Automation",
+      icon: "M13 10V3L4 14h7v7l9-11h-7z",
+      color: t.successColor,
+      bg: "#e6faf4",
+      count: 4,
+      href: "/apps/categories/automation",
+    },
+    {
+      name: "Payments",
+      icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      color: "#f59e0b",
+      bg: "#fef3c7",
+      count: 2,
+      href: "/apps/categories/payment",
+    },
+    {
+      name: "CRM",
+      icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
+      color: "#8b5cf6",
+      bg: "#ede9fe",
+      count: 6,
+      href: "/apps/categories/crm",
+    },
+  ];
+}
 
 const POPULAR_APPS = [
   {
@@ -291,6 +312,9 @@ const FONT = "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
 // ── Nav arrow button ───────────────────────────────────────────────────────
 
 function NavArrow({ d }: { d: string }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   const [hovered, setHovered] = useState(false);
   return (
     <button
@@ -301,9 +325,9 @@ function NavArrow({ d }: { d: string }) {
         width: 32,
         height: 32,
         borderRadius: 9,
-        border: `1px solid ${hovered ? "#c4b5fd" : "#e2e8f0"}`,
-        background: hovered ? "#f0effe" : "white",
-        color: hovered ? "#6366f1" : "#4b5563",
+        border: `1px solid ${hovered ? `${theme.brandSoft}` : `${theme.border}`}`,
+        background: hovered ? `${theme.brandSoft}` : "white",
+        color: hovered ? `${theme.brandPrimary}` : `${theme.slateColor}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -324,6 +348,10 @@ export function PagerScheduleAppStoreDashboard({
   setSearchText,
 }: PagerScheduleAppStoreDashboardProps) {
   const { data: session } = useSession();
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
+
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [twoFAStep, setTwoFAStep] = useState(1);
   const [verificationCode, setVerificationCode] = useState("");
@@ -352,7 +380,7 @@ export function PagerScheduleAppStoreDashboard({
         justifyContent: "space-between",
         marginBottom: 18,
       }}>
-      <span style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>{title}</span>
+      <span style={{ fontSize: 16, fontWeight: 700, color: `${theme.inkColor}` }}>{title}</span>
       <div style={{ display: "flex", gap: 8 }}>
         <NavArrow d="M15 18l-6-6 6-6" />
         <NavArrow d={ICONS.chevronRight} />
@@ -378,8 +406,8 @@ export function PagerScheduleAppStoreDashboard({
         <aside
           style={{
             width: 224,
-            background: "#ffffff",
-            borderRight: "1px solid #e2e8f0",
+            background: theme.sidebarBg,
+            borderRight: `1px solid ${theme.border}`,
             boxShadow: "2px 0 12px rgba(0,0,0,0.04)",
             display: "flex",
             flexDirection: "column",
@@ -389,14 +417,14 @@ export function PagerScheduleAppStoreDashboard({
           <div style={{ padding: "22px 20px 18px" }}>
             <WaveformLogo size={34} />
           </div>
-          <div style={{ height: 1, background: "#e2e8f0", margin: "0 16px 14px" }} />
+          <div style={{ height: 1, background: `${theme.border}`, margin: "0 16px 14px" }} />
 
           {/* User pill */}
           <div style={{ padding: "0 12px 16px" }}>
             <div
               style={{
-                background: "#fce8e8",
-                border: "1px solid #f0e4e4",
+                background: `${theme.pageBg}`,
+                border: `1px solid ${theme.border}`,
                 borderRadius: 12,
                 padding: "10px 12px",
                 display: "flex",
@@ -409,7 +437,7 @@ export function PagerScheduleAppStoreDashboard({
                   width: 34,
                   height: 34,
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                  background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -426,7 +454,7 @@ export function PagerScheduleAppStoreDashboard({
                   style={{
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#111827",
+                    color: `${theme.inkColor}`,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -435,7 +463,7 @@ export function PagerScheduleAppStoreDashboard({
                 </div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>Admin</div>
               </div>
-              <div style={{ color: "#9ca3af", flexShrink: 0 }}>
+              <div style={{ color: `${theme.mutedColor}`, flexShrink: 0 }}>
                 <SvgIcon d={ICONS.chevronDown} size={14} />
               </div>
             </div>
@@ -446,7 +474,7 @@ export function PagerScheduleAppStoreDashboard({
             style={{
               fontSize: 10.5,
               fontWeight: 600,
-              color: "#9ca3af",
+              color: `${theme.mutedColor}`,
               textTransform: "uppercase",
               letterSpacing: 1,
               padding: "0 20px 8px",
@@ -471,7 +499,7 @@ export function PagerScheduleAppStoreDashboard({
                   padding: "9px 12px",
                   borderRadius: 10,
                   background: "transparent",
-                  color: "#4b5563",
+                  color: `${theme.slateColor}`,
                   fontSize: 13.5,
                   fontWeight: 400,
                   marginBottom: 2,
@@ -498,7 +526,7 @@ export function PagerScheduleAppStoreDashboard({
             <div
               style={{
                 borderRadius: 10,
-                background: "#f0effe",
+                background: `${theme.brandSoft}`,
                 marginBottom: 2,
                 overflow: "hidden",
               }}>
@@ -509,7 +537,7 @@ export function PagerScheduleAppStoreDashboard({
                   alignItems: "center",
                   gap: 10,
                   padding: "9px 12px",
-                  color: "#6366f1",
+                  color: `${theme.brandPrimary}`,
                   fontSize: 13.5,
                   fontWeight: 600,
                   textDecoration: "none",
@@ -519,7 +547,7 @@ export function PagerScheduleAppStoreDashboard({
                     width: 28,
                     height: 28,
                     borderRadius: 7,
-                    background: "rgba(99,102,241,0.12)",
+                    background: `${alpha(theme.brandPrimary, 0.12)}`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -544,11 +572,11 @@ export function PagerScheduleAppStoreDashboard({
                       display: "flex",
                       alignItems: "center",
                       padding: "7px 12px 7px 52px",
-                      color: sub.active ? "#6366f1" : "#6b7280",
+                      color: sub.active ? `${theme.brandPrimary}` : "#6b7280",
                       fontSize: 13,
                       fontWeight: sub.active ? 600 : 400,
                       textDecoration: "none",
-                      background: sub.active ? "rgba(99,102,241,0.08)" : "transparent",
+                      background: sub.active ? `${alpha(theme.brandPrimary, 0.08)}` : "transparent",
                       borderRadius: 8,
                       margin: "0 4px",
                       transition: "all .15s",
@@ -559,7 +587,7 @@ export function PagerScheduleAppStoreDashboard({
                           width: 5,
                           height: 5,
                           borderRadius: "50%",
-                          background: "#6366f1",
+                          background: `${theme.brandPrimary}`,
                           display: "inline-block",
                           marginRight: 8,
                           flexShrink: 0,
@@ -574,7 +602,7 @@ export function PagerScheduleAppStoreDashboard({
           </nav>
 
           {/* Bottom */}
-          <div style={{ borderTop: "1px solid #e2e8f0", padding: "12px 10px 0" }}>
+          <div style={{ borderTop: `1px solid ${theme.border}`, padding: "12px 10px 0" }}>
             {[
               { label: "View public page", href: "/", icon: ICONS.externalLink },
               { label: "Copy public link", href: "#", icon: ICONS.link },
@@ -589,7 +617,7 @@ export function PagerScheduleAppStoreDashboard({
                   gap: 9,
                   padding: "8px 12px",
                   borderRadius: 8,
-                  color: "#9ca3af",
+                  color: `${theme.mutedColor}`,
                   fontSize: 13,
                   textDecoration: "none",
                   transition: "all .15s",
@@ -602,7 +630,7 @@ export function PagerScheduleAppStoreDashboard({
             <div
               style={{
                 fontSize: 11,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 opacity: 0.55,
                 padding: "10px 12px 14px",
                 lineHeight: 1.5,
@@ -619,8 +647,8 @@ export function PagerScheduleAppStoreDashboard({
           <div
             style={{
               height: 62,
-              background: "white",
-              borderBottom: "1px solid #e2e8f0",
+              background: theme.cardBg,
+              borderBottom: `1px solid ${theme.border}`,
               boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
               display: "flex",
               alignItems: "center",
@@ -629,9 +657,9 @@ export function PagerScheduleAppStoreDashboard({
               flexShrink: 0,
             }}>
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 13, color: "#9ca3af" }}>Apps</span>
+              <span style={{ fontSize: 13, color: `${theme.mutedColor}` }}>Apps</span>
               <span style={{ fontSize: 13, color: "#d1d5db", margin: "0 7px" }}>›</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#4b5563" }}>App store</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: `${theme.slateColor}` }}>App store</span>
             </div>
 
             {/* Search */}
@@ -642,7 +670,7 @@ export function PagerScheduleAppStoreDashboard({
                   left: 10,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#9ca3af",
+                  color: `${theme.mutedColor}`,
                   pointerEvents: "none",
                 }}>
                 <SvgIcon d={ICONS.search} size={14} />
@@ -657,12 +685,12 @@ export function PagerScheduleAppStoreDashboard({
                 style={{
                   width: "100%",
                   padding: "8px 12px 8px 32px",
-                  border: `1.5px solid ${searchFocused ? "#6366f1" : "#e2e8f0"}`,
+                  border: `1.5px solid ${searchFocused ? `${theme.brandPrimary}` : `${theme.border}`}`,
                   borderRadius: 9,
-                  background: "#f8fafc",
+                  background: `${theme.pageBg}`,
                   fontSize: 13,
                   outline: "none",
-                  boxShadow: searchFocused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+                  boxShadow: searchFocused ? `0 0 0 3px ${alpha(theme.brandPrimary, 0.12)}` : "none",
                   transition: "all .2s",
                   fontFamily: FONT,
                   boxSizing: "border-box",
@@ -670,7 +698,7 @@ export function PagerScheduleAppStoreDashboard({
               />
             </div>
 
-            <div style={{ width: 1, height: 24, background: "#e2e8f0", flexShrink: 0 }} />
+            <div style={{ width: 1, height: 24, background: `${theme.border}`, flexShrink: 0 }} />
             <WaveformLogo size={26} />
           </div>
 
@@ -728,21 +756,21 @@ export function PagerScheduleAppStoreDashboard({
           )}
 
           {/* CONTENT */}
-          <main style={{ flex: 1, background: "#f8fafc", overflowY: "auto", padding: "30px" }}>
+          <main style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
             {/* Heading */}
             <div style={{ marginBottom: 32 }}>
               <h1
                 style={{
                   fontSize: 24,
                   fontWeight: 800,
-                  color: "#111827",
+                  color: `${theme.inkColor}`,
                   letterSpacing: "-0.4px",
                   margin: "0 0 6px",
                   fontFamily: FONT,
                 }}>
                 App store
               </h1>
-              <p style={{ fontSize: 14, color: "#9ca3af", margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: `${theme.mutedColor}`, margin: 0, lineHeight: 1.5 }}>
                 Connecting people, technology and the workplace
               </p>
             </div>
@@ -753,7 +781,7 @@ export function PagerScheduleAppStoreDashboard({
                 <p
                   style={{
                     fontSize: 13.5,
-                    color: "#4b5563",
+                    color: `${theme.slateColor}`,
                     marginBottom: 16,
                     fontWeight: 500,
                   }}>
@@ -772,7 +800,7 @@ export function PagerScheduleAppStoreDashboard({
                       gridTemplateColumns: "repeat(5, 1fr)",
                       gap: 12,
                     }}>
-                    {FEATURED_CATS.map((cat) => (
+                    {getFeaturedCats(theme).map((cat) => (
                       <CategoryCard key={cat.name} cat={cat} />
                     ))}
                   </div>
@@ -798,9 +826,9 @@ export function PagerScheduleAppStoreDashboard({
                   {sectionHeader("Recently added")}
                   <div
                     style={{
-                      background: "white",
+                      background: theme.cardBg,
                       borderRadius: 16,
-                      border: "1px solid #e2e8f0",
+                      border: `1px solid ${theme.border}`,
                       boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                       padding: "48px 24px",
                       display: "flex",
@@ -814,15 +842,15 @@ export function PagerScheduleAppStoreDashboard({
                         width: 48,
                         height: 48,
                         borderRadius: "50%",
-                        background: "#f0effe",
+                        background: `${theme.brandSoft}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#6366f1",
+                        color: `${theme.brandPrimary}`,
                       }}>
                       <SvgIcon d={ICONS.star} size={22} strokeWidth={1.5} />
                     </div>
-                    <span style={{ fontSize: 14, color: "#9ca3af" }}>
+                    <span style={{ fontSize: 14, color: `${theme.mutedColor}` }}>
                       New integrations appear here
                     </span>
                   </div>
@@ -851,7 +879,7 @@ export function PagerScheduleAppStoreDashboard({
           }}>
           <div
             style={{
-              background: "white",
+              background: theme.cardBg,
               borderRadius: 16,
               padding: 32,
               width: 420,
@@ -870,7 +898,7 @@ export function PagerScheduleAppStoreDashboard({
                 border: "none",
                 cursor: "pointer",
                 fontSize: 18,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 lineHeight: 1,
                 padding: 4,
               }}>
@@ -884,7 +912,7 @@ export function PagerScheduleAppStoreDashboard({
                     height: 4,
                     flex: 1,
                     borderRadius: 2,
-                    background: s <= twoFAStep ? "#6366f1" : "#e5e7eb",
+                    background: s <= twoFAStep ? `${theme.brandPrimary}` : `${theme.border}`,
                     transition: "background 0.3s",
                   }}
                 />
@@ -892,7 +920,7 @@ export function PagerScheduleAppStoreDashboard({
             </div>
             {twoFAStep === 1 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Set up Two-Factor Authentication
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
@@ -905,7 +933,7 @@ export function PagerScheduleAppStoreDashboard({
                     borderRadius: 10,
                     padding: "14px 16px",
                     marginBottom: 24,
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${theme.border}`,
                   }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
                     Step 1: Install an authenticator app
@@ -921,7 +949,7 @@ export function PagerScheduleAppStoreDashboard({
                     width: "100%",
                     padding: 12,
                     borderRadius: 8,
-                    background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                    background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                     color: "white",
                     fontSize: 14,
                     fontWeight: 600,
@@ -934,7 +962,7 @@ export function PagerScheduleAppStoreDashboard({
             )}
             {twoFAStep === 2 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Scan QR Code
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20, lineHeight: 1.6 }}>
@@ -947,7 +975,7 @@ export function PagerScheduleAppStoreDashboard({
                     margin: "0 auto 16px",
                     background: "#f3f4f6",
                     borderRadius: 10,
-                    border: "2px solid #e5e7eb",
+                    border: `2px solid ${theme.border}`,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -955,7 +983,7 @@ export function PagerScheduleAppStoreDashboard({
                     gap: 6,
                   }}>
                   <span style={{ fontSize: 36 }}>📱</span>
-                  <span style={{ fontSize: 11, color: "#9ca3af" }}>QR Code</span>
+                  <span style={{ fontSize: 11, color: `${theme.mutedColor}` }}>QR Code</span>
                 </div>
                 <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 20 }}>
                   Can&apos;t scan? Enter this key manually:
@@ -995,7 +1023,7 @@ export function PagerScheduleAppStoreDashboard({
                       flex: 2,
                       padding: 11,
                       borderRadius: 8,
-                      background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                      background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                       color: "white",
                       fontSize: 13,
                       fontWeight: 600,
@@ -1009,7 +1037,7 @@ export function PagerScheduleAppStoreDashboard({
             )}
             {twoFAStep === 3 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Verify Setup
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
@@ -1029,7 +1057,7 @@ export function PagerScheduleAppStoreDashboard({
                     fontSize: 26,
                     fontWeight: 700,
                     letterSpacing: 10,
-                    border: `2px solid ${verificationCode.length === 6 ? "#6366f1" : "#e5e7eb"}`,
+                    border: `2px solid ${verificationCode.length === 6 ? `${theme.brandPrimary}` : `${theme.border}`}`,
                     borderRadius: 10,
                     outline: "none",
                     marginBottom: 20,
@@ -1064,9 +1092,9 @@ export function PagerScheduleAppStoreDashboard({
                       borderRadius: 8,
                       background:
                         verificationCode.length === 6
-                          ? "linear-gradient(135deg, #6366f1, #818cf8)"
-                          : "#e5e7eb",
-                      color: verificationCode.length === 6 ? "white" : "#9ca3af",
+                          ? `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`
+                          : `${theme.border}`,
+                      color: verificationCode.length === 6 ? "white" : `${theme.mutedColor}`,
                       fontSize: 13,
                       fontWeight: 600,
                       border: "none",
@@ -1087,11 +1115,10 @@ export function PagerScheduleAppStoreDashboard({
 
 // ── Sub-components (defined after main to avoid hoisting issues) ───────────
 
-function CategoryCard({
-  cat,
-}: {
-  cat: (typeof FEATURED_CATS)[number];
-}) {
+function CategoryCard({ cat }: { cat: FeaturedCat }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   const [hovered, setHovered] = useState(false);
   return (
     <Link
@@ -1100,12 +1127,12 @@ function CategoryCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         display: "block",
-        background: "white",
+        background: theme.cardBg,
         borderRadius: 16,
         padding: "20px 18px",
-        border: `1px solid ${hovered ? "#c4b5fd" : "#e2e8f0"}`,
+        border: `1px solid ${hovered ? `${theme.brandSoft}` : `${theme.border}`}`,
         boxShadow: hovered
-          ? "0 8px 24px rgba(99,102,241,0.1)"
+          ? `0 8px 24px ${alpha(theme.brandPrimary, 0.1)}`
           : "0 2px 8px rgba(0,0,0,0.04)",
         transform: hovered ? "translateY(-2px)" : "none",
         transition: "all .2s",
@@ -1129,24 +1156,23 @@ function CategoryCard({
         style={{
           fontSize: 14.5,
           fontWeight: 700,
-          color: "#111827",
+          color: `${theme.inkColor}`,
           marginBottom: 5,
           fontFamily: "'DM Sans', -apple-system, sans-serif",
         }}>
         {cat.name}
       </div>
-      <div style={{ fontSize: 13, color: "#6366f1", fontWeight: 500 }}>
+      <div style={{ fontSize: 13, color: `${theme.brandPrimary}`, fontWeight: 500 }}>
         {cat.count} apps →
       </div>
     </Link>
   );
 }
 
-function PopularAppCard({
-  app,
-}: {
-  app: (typeof POPULAR_APPS)[number];
-}) {
+function PopularAppCard({ app }: { app: (typeof POPULAR_APPS)[number] }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   const [hovered, setHovered] = useState(false);
   const [btnHovered, setBtnHovered] = useState(false);
   return (
@@ -1154,12 +1180,12 @@ function PopularAppCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: "white",
+        background: theme.cardBg,
         borderRadius: 18,
-        border: `1px solid ${hovered ? "#c4b5fd" : "#e2e8f0"}`,
+        border: `1px solid ${hovered ? `${theme.brandSoft}` : `${theme.border}`}`,
         overflow: "hidden",
         boxShadow: hovered
-          ? "0 10px 28px rgba(99,102,241,0.1)"
+          ? `0 10px 28px ${alpha(theme.brandPrimary, 0.1)}`
           : "0 2px 8px rgba(0,0,0,0.04)",
         transform: hovered ? "translateY(-2px)" : "none",
         transition: "all .2s",
@@ -1170,8 +1196,8 @@ function PopularAppCard({
       <div
         style={{
           padding: "22px 22px 18px",
-          background: "linear-gradient(135deg, #f8fafc, #eef2ff)",
-          borderBottom: "1px solid #e2e8f0",
+          background: `linear-gradient(135deg, ${theme.pageBg}, #eef2ff)`,
+          borderBottom: `1px solid ${theme.border}`,
         }}>
         <AppLogo logo={app.logo} size={52} />
       </div>
@@ -1181,7 +1207,7 @@ function PopularAppCard({
           style={{
             fontSize: 15.5,
             fontWeight: 700,
-            color: "#111827",
+            color: `${theme.inkColor}`,
             marginBottom: 8,
             fontFamily: "'DM Sans', -apple-system, sans-serif",
           }}>
@@ -1190,7 +1216,7 @@ function PopularAppCard({
         <div
           style={{
             fontSize: 13.5,
-            color: "#9ca3af",
+            color: `${theme.mutedColor}`,
             lineHeight: 1.6,
             marginBottom: 18,
             minHeight: 52,
@@ -1205,12 +1231,12 @@ function PopularAppCard({
           style={{
             display: "block",
             padding: "10px 0",
-            border: `1.5px solid ${btnHovered ? "#c4b5fd" : "#e2e8f0"}`,
+            border: `1.5px solid ${btnHovered ? `${theme.brandSoft}` : `${theme.border}`}`,
             borderRadius: 10,
-            background: btnHovered ? "#f0effe" : "white",
+            background: btnHovered ? `${theme.brandSoft}` : "white",
             fontSize: 14,
             fontWeight: 600,
-            color: btnHovered ? "#6366f1" : "#4b5563",
+            color: btnHovered ? `${theme.brandPrimary}` : `${theme.slateColor}`,
             textAlign: "center",
             textDecoration: "none",
             transition: "all .15s",

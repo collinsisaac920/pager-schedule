@@ -1,6 +1,7 @@
 "use client";
 
 import type { RouterOutputs } from "@calcom/trpc/react";
+import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -17,6 +18,9 @@ interface PagerScheduleDashboardProps {
 }
 
 function WaveformLogo({ size = 34 }: { size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div
@@ -24,13 +28,13 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           width: size,
           height: size,
           borderRadius: Math.round(size * 0.265),
-          background: "linear-gradient(135deg, #818cf8 0%, #6366f1 100%)",
+          background: `linear-gradient(135deg, ${theme.brandPrimary}cc 0%, ${theme.brandPrimary} 100%)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: Math.round(size * 0.09),
           flexShrink: 0,
-          boxShadow: "0 2px 8px rgba(99,102,241,0.3)",
+          boxShadow: `0 2px 8px ${alpha(theme.brandPrimary, 0.3)}`,
         }}>
         {([0.55, 1, 0.75, 0.45] as number[]).map((h, i) => (
           <span
@@ -50,7 +54,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.41),
             fontWeight: 700,
-            color: "#111827",
+            color: `${theme.inkColor}`,
             letterSpacing: "-0.3px",
             lineHeight: 1.1,
           }}>
@@ -60,7 +64,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.235),
             fontWeight: 700,
-            color: "#6366f1",
+            color: `${theme.brandPrimary}`,
             letterSpacing: Math.round(size * 0.053),
             lineHeight: 1,
           }}>
@@ -72,6 +76,9 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
 }
 
 function SvgIcon({ d, size = 16 }: { d: string; size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <svg
       width={size}
@@ -113,6 +120,10 @@ export function PagerScheduleDashboard({
   hiddenSlot,
 }: PagerScheduleDashboardProps) {
   const { data: session } = useSession();
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
+
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [twoFAStep, setTwoFAStep] = useState(1);
   const [verificationCode, setVerificationCode] = useState("");
@@ -148,8 +159,8 @@ export function PagerScheduleDashboard({
         <aside
           style={{
             width: 224,
-            background: "#ffffff",
-            borderRight: "1px solid #e5e7eb",
+            background: theme.sidebarBg,
+            borderRight: `1px solid ${theme.border}`,
             display: "flex",
             flexDirection: "column",
             flexShrink: 0,
@@ -167,7 +178,7 @@ export function PagerScheduleDashboard({
               padding: "10px 12px",
               background: "#f9fafb",
               borderRadius: 10,
-              border: "1px solid #e5e7eb",
+              border: `1px solid ${theme.border}`,
             }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
@@ -175,7 +186,7 @@ export function PagerScheduleDashboard({
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #818cf8, #6366f1)",
+                  background: `linear-gradient(135deg, ${theme.brandPrimary}cc, ${theme.brandPrimary})`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -188,7 +199,7 @@ export function PagerScheduleDashboard({
                   style={{
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#111827",
+                    color: `${theme.inkColor}`,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -242,7 +253,7 @@ export function PagerScheduleDashboard({
               style={{
                 display: "block",
                 fontSize: 12,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 marginBottom: 6,
                 textDecoration: "none",
               }}>
@@ -253,7 +264,7 @@ export function PagerScheduleDashboard({
               style={{
                 display: "block",
                 fontSize: 12,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 marginBottom: 8,
                 textDecoration: "none",
               }}>
@@ -269,8 +280,8 @@ export function PagerScheduleDashboard({
           <div
             style={{
               height: 56,
-              background: "white",
-              borderBottom: "1px solid #e5e7eb",
+              background: theme.cardBg,
+              borderBottom: `1px solid ${theme.border}`,
               display: "flex",
               alignItems: "center",
               padding: "0 24px",
@@ -279,9 +290,9 @@ export function PagerScheduleDashboard({
             }}>
             {/* Breadcrumb */}
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 12.5, color: "#9ca3af" }}>Dashboard</span>
+              <span style={{ fontSize: 12.5, color: `${theme.mutedColor}` }}>Dashboard</span>
               <span style={{ fontSize: 12.5, color: "#d1d5db", margin: "0 6px" }}>/</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>Event Types</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: `${theme.inkColor}` }}>Event Types</span>
             </div>
 
             {/* Search input */}
@@ -292,7 +303,7 @@ export function PagerScheduleDashboard({
                   left: 10,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#9ca3af",
+                  color: `${theme.mutedColor}`,
                   pointerEvents: "none",
                   display: "flex",
                 }}>
@@ -306,12 +317,12 @@ export function PagerScheduleDashboard({
                 style={{
                   width: 200,
                   padding: "7px 12px 7px 30px",
-                  border: "1px solid #e5e7eb",
+                  border: `1px solid ${theme.border}`,
                   borderRadius: 8,
                   fontSize: 13,
                   outline: "none",
                   background: "#f9fafb",
-                  color: "#111827",
+                  color: `${theme.inkColor}`,
                   boxSizing: "border-box",
                 }}
               />
@@ -323,7 +334,7 @@ export function PagerScheduleDashboard({
               style={{
                 padding: "8px 18px",
                 borderRadius: 8,
-                background: "linear-gradient(135deg, #818cf8 0%, #6366f1 100%)",
+                background: `linear-gradient(135deg, ${theme.brandPrimary}cc 0%, ${theme.brandPrimary} 100%)`,
                 color: "white",
                 fontSize: 13,
                 fontWeight: 600,
@@ -331,7 +342,7 @@ export function PagerScheduleDashboard({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                boxShadow: "0 1px 4px rgba(99,102,241,0.3)",
+                boxShadow: `0 1px 4px ${alpha(theme.brandPrimary, 0.3)}`,
                 flexShrink: 0,
               }}>
               <span style={{ fontSize: 16, lineHeight: 1, marginTop: -1 }}>+</span>
@@ -346,7 +357,7 @@ export function PagerScheduleDashboard({
 
           {/* CONTENT AREA */}
           <main
-            style={{ flex: 1, background: "#fce8e8", overflowY: "auto", padding: "24px", position: "relative" }}>
+            style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "24px", position: "relative" }}>
             {/* 2FA warning banner */}
             <div
               style={{
@@ -397,17 +408,17 @@ export function PagerScheduleDashboard({
                 marginBottom: 24,
               }}>
               {[
-                { label: "Total Event Types", value: "—", sub: "All event types", dot: "#6366f1" },
+                { label: "Total Event Types", value: "—", sub: "All event types", dot: `${theme.brandPrimary}` },
                 { label: "Active", value: "—", sub: "Visible on profile", dot: "#10b981" },
                 { label: "Hidden", value: "—", sub: "Hidden from profile", dot: "#f59e0b" },
               ].map((stat) => (
                 <div
                   key={stat.label}
                   style={{
-                    background: "white",
+                    background: theme.cardBg,
                     borderRadius: 12,
                     padding: "18px 20px",
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${theme.border}`,
                     boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
@@ -422,10 +433,10 @@ export function PagerScheduleDashboard({
                     />
                     <div style={{ fontSize: 11.5, color: "#6b7280", fontWeight: 500 }}>{stat.label}</div>
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: "#111827", lineHeight: 1 }}>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: `${theme.inkColor}`, lineHeight: 1 }}>
                     {stat.value}
                   </div>
-                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{stat.sub}</div>
+                  <div style={{ fontSize: 11, color: `${theme.mutedColor}`, marginTop: 4 }}>{stat.sub}</div>
                 </div>
               ))}
             </div>
@@ -433,10 +444,10 @@ export function PagerScheduleDashboard({
             {/* Event type list — existing functional component, visually wrapped */}
             <div
               style={{
-                background: "white",
+                background: theme.cardBg,
                 borderRadius: 12,
                 overflow: "hidden",
-                border: "1px solid #e5e7eb",
+                border: `1px solid ${theme.border}`,
                 boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}>
               {children}
@@ -473,7 +484,7 @@ export function PagerScheduleDashboard({
           }}>
           <div
             style={{
-              background: "white",
+              background: theme.cardBg,
               borderRadius: 16,
               padding: 32,
               width: 420,
@@ -492,7 +503,7 @@ export function PagerScheduleDashboard({
                 border: "none",
                 cursor: "pointer",
                 fontSize: 18,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 lineHeight: 1,
                 padding: 4,
               }}>
@@ -508,7 +519,7 @@ export function PagerScheduleDashboard({
                     height: 4,
                     flex: 1,
                     borderRadius: 2,
-                    background: s <= twoFAStep ? "#6366f1" : "#e5e7eb",
+                    background: s <= twoFAStep ? `${theme.brandPrimary}` : `${theme.border}`,
                     transition: "background 0.3s",
                   }}
                 />
@@ -518,7 +529,7 @@ export function PagerScheduleDashboard({
             {/* Step 1 — Introduction */}
             {twoFAStep === 1 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Set up Two-Factor Authentication
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
@@ -531,7 +542,7 @@ export function PagerScheduleDashboard({
                     borderRadius: 10,
                     padding: "14px 16px",
                     marginBottom: 24,
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${theme.border}`,
                   }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
                     Step 1: Install an authenticator app
@@ -546,7 +557,7 @@ export function PagerScheduleDashboard({
                     width: "100%",
                     padding: 12,
                     borderRadius: 8,
-                    background: "linear-gradient(135deg, #818cf8, #6366f1)",
+                    background: `linear-gradient(135deg, ${theme.brandPrimary}cc, ${theme.brandPrimary})`,
                     color: "white",
                     fontSize: 14,
                     fontWeight: 600,
@@ -561,7 +572,7 @@ export function PagerScheduleDashboard({
             {/* Step 2 — QR Code */}
             {twoFAStep === 2 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Scan QR Code
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20, lineHeight: 1.6 }}>
@@ -574,7 +585,7 @@ export function PagerScheduleDashboard({
                     margin: "0 auto 16px",
                     background: "#f3f4f6",
                     borderRadius: 10,
-                    border: "2px solid #e5e7eb",
+                    border: `2px solid ${theme.border}`,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -582,7 +593,7 @@ export function PagerScheduleDashboard({
                     gap: 6,
                   }}>
                   <span style={{ fontSize: 36 }}>📱</span>
-                  <span style={{ fontSize: 11, color: "#9ca3af" }}>QR Code</span>
+                  <span style={{ fontSize: 11, color: `${theme.mutedColor}` }}>QR Code</span>
                 </div>
                 <div
                   style={{ fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 20 }}>
@@ -621,7 +632,7 @@ export function PagerScheduleDashboard({
                       flex: 2,
                       padding: 11,
                       borderRadius: 8,
-                      background: "linear-gradient(135deg, #818cf8, #6366f1)",
+                      background: `linear-gradient(135deg, ${theme.brandPrimary}cc, ${theme.brandPrimary})`,
                       color: "white",
                       fontSize: 13,
                       fontWeight: 600,
@@ -637,7 +648,7 @@ export function PagerScheduleDashboard({
             {/* Step 3 — Verify code */}
             {twoFAStep === 3 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Verify Setup
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
@@ -657,7 +668,7 @@ export function PagerScheduleDashboard({
                     fontSize: 26,
                     fontWeight: 700,
                     letterSpacing: 10,
-                    border: `2px solid ${verificationCode.length === 6 ? "#6366f1" : "#e5e7eb"}`,
+                    border: `2px solid ${verificationCode.length === 6 ? `${theme.brandPrimary}` : `${theme.border}`}`,
                     borderRadius: 10,
                     outline: "none",
                     marginBottom: 20,
@@ -690,9 +701,9 @@ export function PagerScheduleDashboard({
                       borderRadius: 8,
                       background:
                         verificationCode.length === 6
-                          ? "linear-gradient(135deg, #818cf8, #6366f1)"
-                          : "#e5e7eb",
-                      color: verificationCode.length === 6 ? "white" : "#9ca3af",
+                          ? `linear-gradient(135deg, ${theme.brandPrimary}cc, ${theme.brandPrimary})`
+                          : `${theme.border}`,
+                      color: verificationCode.length === 6 ? "white" : `${theme.mutedColor}`,
                       fontSize: 13,
                       fontWeight: 600,
                       border: "none",

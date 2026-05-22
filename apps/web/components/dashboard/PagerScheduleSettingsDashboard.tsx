@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,6 +12,9 @@ interface PagerScheduleSettingsDashboardProps {
 }
 
 function WaveformLogo({ size = 34 }: { size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div
@@ -18,13 +22,13 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           width: size,
           height: size,
           borderRadius: Math.round(size * 0.265),
-          background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+          background: `linear-gradient(135deg, ${theme.brandPrimary} 0%, ${theme.brandPrimary}cc 100%)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: Math.round(size * 0.09),
           flexShrink: 0,
-          boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
+          boxShadow: `0 4px 14px ${alpha(theme.brandPrimary, 0.3)}`,
         }}>
         {([0.55, 1, 0.75, 0.45] as number[]).map((h, i) => (
           <span
@@ -44,7 +48,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.47),
             fontWeight: 700,
-            color: "#111827",
+            color: `${theme.inkColor}`,
             letterSpacing: "-0.3px",
             lineHeight: 1.1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -55,7 +59,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.27),
             fontWeight: 700,
-            color: "#6366f1",
+            color: `${theme.brandPrimary}`,
             letterSpacing: Math.round(size * 0.053),
             lineHeight: 1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -142,6 +146,9 @@ function NavGroup({
   items: { label: string; href: string }[];
   pathname: string;
 }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div style={{ marginBottom: 4 }}>
       {/* Group header */}
@@ -153,7 +160,7 @@ function NavGroup({
           padding: "6px 14px 4px",
           fontSize: 10.5,
           fontWeight: 700,
-          color: "#94a3b8",
+          color: `${theme.mutedColor}`,
           textTransform: "uppercase",
           letterSpacing: 0.9,
         }}>
@@ -174,8 +181,8 @@ function NavGroup({
                 justifyContent: "space-between",
                 padding: "7px 10px",
                 borderRadius: 8,
-                background: active ? "#f0effe" : "transparent",
-                color: active ? "#6366f1" : "#4b5563",
+                background: active ? `${theme.brandSoft}` : "transparent",
+                color: active ? `${theme.brandPrimary}` : `${theme.slateColor}`,
                 fontSize: 13.5,
                 fontWeight: active ? 600 : 400,
                 marginBottom: 1,
@@ -184,7 +191,7 @@ function NavGroup({
               }}>
               <span>{item.label}</span>
               {active && (
-                <span style={{ color: "#6366f1", opacity: 0.6 }}>
+                <span style={{ color: `${theme.brandPrimary}`, opacity: 0.6 }}>
                   <SvgIcon d={ICONS.chevronRight} size={13} strokeWidth={2.5} />
                 </span>
               )}
@@ -198,6 +205,10 @@ function NavGroup({
 
 export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettingsDashboardProps) {
   const { data: session } = useSession();
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
+
   const pathname = usePathname() ?? "";
   const [savedVisible, setSavedVisible] = useState(false);
 
@@ -240,8 +251,8 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
       <aside
         style={{
           width: 224,
-          background: "#ffffff",
-          borderRight: "1px solid #e2e8f0",
+          background: theme.sidebarBg,
+          borderRight: `1px solid ${theme.border}`,
           boxShadow: "2px 0 12px rgba(0,0,0,0.04)",
           display: "flex",
           flexDirection: "column",
@@ -270,14 +281,14 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
         </div>
 
         {/* HR */}
-        <div style={{ height: 1, background: "#e2e8f0", margin: "0 14px 14px" }} />
+        <div style={{ height: 1, background: `${theme.border}`, margin: "0 14px 14px" }} />
 
         {/* User row */}
         <div style={{ padding: "0 10px 16px" }}>
           <div
             style={{
-              background: "#f8fafc",
-              border: "1px solid #e2e8f0",
+              background: `${theme.pageBg}`,
+              border: `1px solid ${theme.border}`,
               borderRadius: 12,
               padding: "10px 12px",
               display: "flex",
@@ -289,7 +300,7 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -306,7 +317,7 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
                 style={{
                   fontSize: 12.5,
                   fontWeight: 600,
-                  color: "#111827",
+                  color: `${theme.inkColor}`,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -316,7 +327,7 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
               <div
                 style={{
                   fontSize: 11,
-                  color: "#94a3b8",
+                  color: `${theme.mutedColor}`,
                   marginTop: 1,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -331,22 +342,22 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
         {/* Nav groups */}
         <nav style={{ flex: 1, paddingBottom: 16 }}>
           <NavGroup label="Account" icon={ICONS.user} items={NAV_ACCOUNT} pathname={pathname} />
-          <div style={{ height: 1, background: "#e2e8f0", margin: "8px 14px" }} />
+          <div style={{ height: 1, background: `${theme.border}`, margin: "8px 14px" }} />
           <NavGroup label="Security" icon={ICONS.shield} items={NAV_SECURITY} pathname={pathname} />
-          <div style={{ height: 1, background: "#e2e8f0", margin: "8px 14px" }} />
+          <div style={{ height: 1, background: `${theme.border}`, margin: "8px 14px" }} />
           <NavGroup label="Developer" icon={ICONS.terminal} items={NAV_DEVELOPER} pathname={pathname} />
         </nav>
 
         {/* Footer */}
         <div
           style={{
-            borderTop: "1px solid #e2e8f0",
+            borderTop: `1px solid ${theme.border}`,
             padding: "12px 12px 16px",
           }}>
           <div
             style={{
               fontSize: 11,
-              color: "#94a3b8",
+              color: `${theme.mutedColor}`,
               opacity: 0.6,
               lineHeight: 1.5,
             }}>
@@ -361,8 +372,8 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
         <div
           style={{
             height: 62,
-            background: "white",
-            borderBottom: "1px solid #e2e8f0",
+            background: theme.cardBg,
+            borderBottom: `1px solid ${theme.border}`,
             boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
             display: "flex",
             alignItems: "center",
@@ -372,9 +383,9 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
           }}>
           {/* Breadcrumb */}
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: 13, color: "#94a3b8" }}>Settings</span>
-            <span style={{ fontSize: 13, color: "#cbd5e1", margin: "0 7px" }}>›</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#4b5563" }}>{pageLabel}</span>
+            <span style={{ fontSize: 13, color: `${theme.mutedColor}` }}>Settings</span>
+            <span style={{ fontSize: 13, color: `${theme.mutedColor}`, margin: "0 7px" }}>›</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: `${theme.slateColor}` }}>{pageLabel}</span>
           </div>
 
           {/* Saved badge */}
@@ -398,7 +409,7 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
           </div>
 
           {/* Divider */}
-          <div style={{ width: 1, height: 24, background: "#e2e8f0", flexShrink: 0 }} />
+          <div style={{ width: 1, height: 24, background: `${theme.border}`, flexShrink: 0 }} />
 
           {/* Logo */}
           <WaveformLogo size={26} />
@@ -408,7 +419,7 @@ export function PagerScheduleSettingsDashboard({ children }: PagerScheduleSettin
         <main
           style={{
             flex: 1,
-            background: "#f8fafc",
+            background: `${theme.pageBg}`,
             overflowY: "auto",
             padding: "30px 40px",
           }}>

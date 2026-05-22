@@ -8,6 +8,7 @@ import { ToastProvider } from "@coss/ui/components/toast";
 import { WebPushProvider } from "@calcom/web/modules/notifications/components/WebPushContext";
 import { NotificationSoundHandler } from "@calcom/web/components/notification-sound-handler";
 
+import { ThemeProvider } from "@lib/theme-context";
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
 
 import { GeoProvider } from "./GeoContext";
@@ -23,6 +24,7 @@ export function Providers({ isEmbed, children, country }: ProvidersProps) {
 
   return (
     <GeoProvider country={country}>
+      <ThemeProvider>
       <SessionProvider>
         <TrpcProvider>
           <ToastProvider position="bottom-center">
@@ -34,6 +36,7 @@ export function Providers({ isEmbed, children, country }: ProvidersProps) {
           </ToastProvider>
         </TrpcProvider>
       </SessionProvider>
+      </ThemeProvider>
     </GeoProvider>
   );
 }

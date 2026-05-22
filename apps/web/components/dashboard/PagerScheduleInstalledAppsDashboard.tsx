@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -11,6 +12,9 @@ interface PagerScheduleInstalledAppsDashboardProps {
 }
 
 function WaveformLogo({ size = 34 }: { size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div
@@ -18,13 +22,13 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           width: size,
           height: size,
           borderRadius: Math.round(size * 0.265),
-          background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+          background: `linear-gradient(135deg, ${theme.brandPrimary} 0%, ${theme.brandPrimary}cc 100%)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: Math.round(size * 0.09),
           flexShrink: 0,
-          boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
+          boxShadow: `0 4px 14px ${alpha(theme.brandPrimary, 0.3)}`,
         }}>
         {([0.55, 1, 0.75, 0.45] as number[]).map((h, i) => (
           <span
@@ -44,7 +48,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.47),
             fontWeight: 700,
-            color: "#111827",
+            color: `${theme.inkColor}`,
             letterSpacing: "-0.3px",
             lineHeight: 1.1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -55,7 +59,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.27),
             fontWeight: 700,
-            color: "#6366f1",
+            color: `${theme.brandPrimary}`,
             letterSpacing: Math.round(size * 0.053),
             lineHeight: 1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -68,6 +72,9 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
 }
 
 function SvgIcon({ d, size = 16, strokeWidth = 2 }: { d: string; size?: number; strokeWidth?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <svg
       width={size}
@@ -180,6 +187,10 @@ export function PagerScheduleInstalledAppsDashboard({
   activeCategory,
 }: PagerScheduleInstalledAppsDashboardProps) {
   const { data: session } = useSession();
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
+
 
   const userName = session?.user?.name ?? "User";
   const initials = userName
@@ -208,8 +219,8 @@ export function PagerScheduleInstalledAppsDashboard({
       <aside
         style={{
           width: 224,
-          background: "#ffffff",
-          borderRight: "1px solid #e2e8f0",
+          background: theme.sidebarBg,
+          borderRight: `1px solid ${theme.border}`,
           boxShadow: "2px 0 12px rgba(0,0,0,0.04)",
           display: "flex",
           flexDirection: "column",
@@ -219,14 +230,14 @@ export function PagerScheduleInstalledAppsDashboard({
         <div style={{ padding: "22px 20px 18px" }}>
           <WaveformLogo size={34} />
         </div>
-        <div style={{ height: 1, background: "#e2e8f0", margin: "0 16px 14px" }} />
+        <div style={{ height: 1, background: `${theme.border}`, margin: "0 16px 14px" }} />
 
         {/* User pill */}
         <div style={{ padding: "0 12px 16px" }}>
           <div
             style={{
-              background: "#fce8e8",
-              border: "1px solid #f0e4e4",
+              background: `${theme.pageBg}`,
+              border: `1px solid ${theme.border}`,
               borderRadius: 12,
               padding: "10px 12px",
               display: "flex",
@@ -239,7 +250,7 @@ export function PagerScheduleInstalledAppsDashboard({
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -256,7 +267,7 @@ export function PagerScheduleInstalledAppsDashboard({
                 style={{
                   fontSize: 12.5,
                   fontWeight: 600,
-                  color: "#111827",
+                  color: `${theme.inkColor}`,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -265,7 +276,7 @@ export function PagerScheduleInstalledAppsDashboard({
               </div>
               <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>Admin</div>
             </div>
-            <div style={{ color: "#9ca3af", flexShrink: 0 }}>
+            <div style={{ color: `${theme.mutedColor}`, flexShrink: 0 }}>
               <SvgIcon d={ICONS.chevronDown} size={14} />
             </div>
           </div>
@@ -276,7 +287,7 @@ export function PagerScheduleInstalledAppsDashboard({
           style={{
             fontSize: 10.5,
             fontWeight: 600,
-            color: "#9ca3af",
+            color: `${theme.mutedColor}`,
             textTransform: "uppercase",
             letterSpacing: 1,
             padding: "0 20px 8px",
@@ -300,7 +311,7 @@ export function PagerScheduleInstalledAppsDashboard({
                 gap: 10,
                 padding: "9px 12px",
                 borderRadius: 10,
-                color: "#4b5563",
+                color: `${theme.slateColor}`,
                 fontSize: 13.5,
                 fontWeight: 400,
                 marginBottom: 2,
@@ -327,7 +338,7 @@ export function PagerScheduleInstalledAppsDashboard({
           <div
             style={{
               borderRadius: 10,
-              background: "#f0effe",
+              background: `${theme.brandSoft}`,
               marginBottom: 2,
               overflow: "hidden",
             }}>
@@ -338,7 +349,7 @@ export function PagerScheduleInstalledAppsDashboard({
                 alignItems: "center",
                 gap: 10,
                 padding: "9px 12px",
-                color: "#6366f1",
+                color: `${theme.brandPrimary}`,
                 fontSize: 13.5,
                 fontWeight: 600,
                 textDecoration: "none",
@@ -348,7 +359,7 @@ export function PagerScheduleInstalledAppsDashboard({
                   width: 28,
                   height: 28,
                   borderRadius: 7,
-                  background: "rgba(99,102,241,0.12)",
+                  background: `${alpha(theme.brandPrimary, 0.12)}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -371,11 +382,11 @@ export function PagerScheduleInstalledAppsDashboard({
                     display: "flex",
                     alignItems: "center",
                     padding: "7px 12px 7px 52px",
-                    color: sub.active ? "#6366f1" : "#6b7280",
+                    color: sub.active ? `${theme.brandPrimary}` : "#6b7280",
                     fontSize: 13,
                     fontWeight: sub.active ? 600 : 400,
                     textDecoration: "none",
-                    background: sub.active ? "rgba(99,102,241,0.08)" : "transparent",
+                    background: sub.active ? `${alpha(theme.brandPrimary, 0.08)}` : "transparent",
                     borderRadius: 8,
                     margin: "0 4px",
                     transition: "all .15s",
@@ -386,7 +397,7 @@ export function PagerScheduleInstalledAppsDashboard({
                         width: 5,
                         height: 5,
                         borderRadius: "50%",
-                        background: "#6366f1",
+                        background: `${theme.brandPrimary}`,
                         display: "inline-block",
                         marginRight: 8,
                         flexShrink: 0,
@@ -401,7 +412,7 @@ export function PagerScheduleInstalledAppsDashboard({
         </nav>
 
         {/* Bottom */}
-        <div style={{ borderTop: "1px solid #e2e8f0", padding: "12px 10px 0" }}>
+        <div style={{ borderTop: `1px solid ${theme.border}`, padding: "12px 10px 0" }}>
           {[
             { label: "View public page", href: "/", icon: ICONS.externalLink },
             { label: "Copy public link", href: "#", icon: ICONS.link },
@@ -416,7 +427,7 @@ export function PagerScheduleInstalledAppsDashboard({
                 gap: 9,
                 padding: "8px 12px",
                 borderRadius: 8,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 fontSize: 13,
                 textDecoration: "none",
                 transition: "all .15s",
@@ -429,7 +440,7 @@ export function PagerScheduleInstalledAppsDashboard({
           <div
             style={{
               fontSize: 11,
-              color: "#9ca3af",
+              color: `${theme.mutedColor}`,
               opacity: 0.55,
               padding: "10px 12px 14px",
               lineHeight: 1.5,
@@ -445,8 +456,8 @@ export function PagerScheduleInstalledAppsDashboard({
         <div
           style={{
             height: 62,
-            background: "white",
-            borderBottom: "1px solid #e2e8f0",
+            background: theme.cardBg,
+            borderBottom: `1px solid ${theme.border}`,
             boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
             display: "flex",
             alignItems: "center",
@@ -454,9 +465,9 @@ export function PagerScheduleInstalledAppsDashboard({
             flexShrink: 0,
           }}>
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: 13, color: "#9ca3af" }}>Apps</span>
+            <span style={{ fontSize: 13, color: `${theme.mutedColor}` }}>Apps</span>
             <span style={{ fontSize: 13, color: "#d1d5db", margin: "0 7px" }}>›</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#4b5563" }}>Installed apps</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: `${theme.slateColor}` }}>Installed apps</span>
           </div>
           <WaveformLogo size={26} />
         </div>
@@ -467,8 +478,8 @@ export function PagerScheduleInstalledAppsDashboard({
           <div
             style={{
               width: 220,
-              background: "white",
-              borderRight: "1px solid #e2e8f0",
+              background: theme.cardBg,
+              borderRight: `1px solid ${theme.border}`,
               padding: "20px 12px",
               flexShrink: 0,
               overflowY: "auto",
@@ -477,7 +488,7 @@ export function PagerScheduleInstalledAppsDashboard({
               style={{
                 fontSize: 10.5,
                 fontWeight: 600,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 textTransform: "uppercase",
                 letterSpacing: 1,
                 padding: "0 12px",
@@ -497,8 +508,8 @@ export function PagerScheduleInstalledAppsDashboard({
                     gap: 9,
                     padding: "9px 12px",
                     borderRadius: 10,
-                    background: isActive ? "#f0effe" : "transparent",
-                    color: isActive ? "#6366f1" : "#4b5563",
+                    background: isActive ? `${theme.brandSoft}` : "transparent",
+                    color: isActive ? `${theme.brandPrimary}` : `${theme.slateColor}`,
                     fontSize: 13,
                     fontWeight: isActive ? 600 : 400,
                     textDecoration: "none",
@@ -517,7 +528,7 @@ export function PagerScheduleInstalledAppsDashboard({
           <div
             style={{
               flex: 1,
-              background: "#f8fafc",
+              background: `${theme.pageBg}`,
               padding: "28px 30px",
               overflowY: "auto",
               minWidth: 0,
@@ -536,14 +547,14 @@ export function PagerScheduleInstalledAppsDashboard({
                   style={{
                     fontSize: 22,
                     fontWeight: 800,
-                    color: "#111827",
+                    color: `${theme.inkColor}`,
                     letterSpacing: "-0.3px",
                     margin: "0 0 4px",
                     fontFamily: FONT,
                   }}>
                   {meta.title}
                 </h1>
-                <p style={{ fontSize: 13.5, color: "#9ca3af", margin: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 13.5, color: `${theme.mutedColor}`, margin: 0, lineHeight: 1.5 }}>
                   {meta.description}
                 </p>
               </div>
@@ -553,9 +564,9 @@ export function PagerScheduleInstalledAppsDashboard({
             {/* Content card */}
             <div
               style={{
-                background: "white",
+                background: theme.cardBg,
                 borderRadius: 20,
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${theme.border}`,
                 boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
                 overflow: "hidden",
                 minHeight: 240,
@@ -570,6 +581,9 @@ export function PagerScheduleInstalledAppsDashboard({
 }
 
 function AddButton({ href, label }: { href: string; label: string }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   const [hovered, setHovered] = useState(false);
   return (
     <Link
@@ -582,14 +596,14 @@ function AddButton({ href, label }: { href: string; label: string }) {
         height: 36,
         padding: "0 18px",
         borderRadius: 10,
-        background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+        background: `linear-gradient(135deg, ${theme.brandPrimary} 0%, ${theme.brandPrimary}cc 100%)`,
         color: "white",
         fontSize: 13.5,
         fontWeight: 600,
         textDecoration: "none",
         boxShadow: hovered
-          ? "0 6px 18px rgba(99,102,241,0.45)"
-          : "0 2px 10px rgba(99,102,241,0.35)",
+          ? `0 6px 18px ${alpha(theme.brandPrimary, 0.45)}`
+          : `0 2px 10px ${alpha(theme.brandPrimary, 0.35)}`,
         transform: hovered ? "translateY(-1px)" : "none",
         transition: "all .15s",
         flexShrink: 0,

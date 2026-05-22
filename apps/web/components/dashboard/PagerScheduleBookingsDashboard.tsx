@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -10,6 +11,9 @@ interface PagerScheduleBookingsDashboardProps {
 }
 
 function WaveformLogo({ size = 34 }: { size?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <div
@@ -17,13 +21,13 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           width: size,
           height: size,
           borderRadius: Math.round(size * 0.265),
-          background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+          background: `linear-gradient(135deg, ${theme.brandPrimary} 0%, ${theme.brandPrimary}cc 100%)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: Math.round(size * 0.09),
           flexShrink: 0,
-          boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
+          boxShadow: `0 4px 14px ${alpha(theme.brandPrimary, 0.3)}`,
         }}>
         {([0.55, 1, 0.75, 0.45] as number[]).map((h, i) => (
           <span
@@ -43,7 +47,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.47),
             fontWeight: 700,
-            color: "#111827",
+            color: `${theme.inkColor}`,
             letterSpacing: "-0.3px",
             lineHeight: 1.1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -54,7 +58,7 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
           style={{
             fontSize: Math.round(size * 0.27),
             fontWeight: 700,
-            color: "#6366f1",
+            color: `${theme.brandPrimary}`,
             letterSpacing: Math.round(size * 0.053),
             lineHeight: 1,
             fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -67,6 +71,9 @@ function WaveformLogo({ size = 34 }: { size?: number }) {
 }
 
 function SvgIcon({ d, size = 16, strokeWidth = 2 }: { d: string; size?: number; strokeWidth?: number }) {
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
   return (
     <svg
       width={size}
@@ -108,6 +115,10 @@ const FONT = "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
 
 export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookingsDashboardProps) {
   const { data: session } = useSession();
+  const { theme } = useTheme();
+  const alpha = (hex: string, pct: number): string =>
+    hex + Math.round(pct * 255).toString(16).padStart(2, "0");
+
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [twoFAStep, setTwoFAStep] = useState(1);
   const [verificationCode, setVerificationCode] = useState("");
@@ -147,8 +158,8 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
         <aside
           style={{
             width: 224,
-            background: "#ffffff",
-            borderRight: "1px solid #f0e4e4",
+            background: theme.sidebarBg,
+            borderRight: `1px solid ${theme.border}`,
             boxShadow: "2px 0 12px rgba(0,0,0,0.04)",
             display: "flex",
             flexDirection: "column",
@@ -161,14 +172,14 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
           </div>
 
           {/* HR */}
-          <div style={{ height: 1, background: "#f0e4e4", margin: "0 16px 14px" }} />
+          <div style={{ height: 1, background: `${theme.border}`, margin: "0 16px 14px" }} />
 
           {/* User pill */}
           <div style={{ padding: "0 12px 16px" }}>
             <div
               style={{
-                background: "#fce8e8",
-                border: "1px solid #f0e4e4",
+                background: `${theme.pageBg}`,
+                border: `1px solid ${theme.border}`,
                 borderRadius: 12,
                 padding: "10px 12px",
                 display: "flex",
@@ -181,7 +192,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                   width: 34,
                   height: 34,
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                  background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -198,7 +209,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                   style={{
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#111827",
+                    color: `${theme.inkColor}`,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -207,7 +218,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                 </div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>Admin</div>
               </div>
-              <div style={{ color: "#9ca3af", flexShrink: 0 }}>
+              <div style={{ color: `${theme.mutedColor}`, flexShrink: 0 }}>
                 <SvgIcon d={ICONS.chevronDown} size={14} />
               </div>
             </div>
@@ -218,7 +229,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             style={{
               fontSize: 10.5,
               fontWeight: 600,
-              color: "#9ca3af",
+              color: `${theme.mutedColor}`,
               textTransform: "uppercase",
               letterSpacing: 1,
               padding: "0 20px 8px",
@@ -238,8 +249,8 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                   gap: 10,
                   padding: "9px 12px",
                   borderRadius: 10,
-                  background: item.active ? "#f0effe" : "transparent",
-                  color: item.active ? "#6366f1" : "#4b5563",
+                  background: item.active ? `${theme.brandSoft}` : "transparent",
+                  color: item.active ? `${theme.brandPrimary}` : `${theme.slateColor}`,
                   fontSize: 13.5,
                   fontWeight: item.active ? 600 : 400,
                   marginBottom: 2,
@@ -251,7 +262,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     width: 28,
                     height: 28,
                     borderRadius: 7,
-                    background: item.active ? "rgba(99,102,241,0.12)" : "transparent",
+                    background: item.active ? `${alpha(theme.brandPrimary, 0.12)}` : "transparent",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -266,7 +277,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
           </nav>
 
           {/* Bottom section */}
-          <div style={{ borderTop: "1px solid #f0e4e4", padding: "12px 10px 0" }}>
+          <div style={{ borderTop: `1px solid ${theme.border}`, padding: "12px 10px 0" }}>
             {[
               { label: "View public page", href: "/", icon: ICONS.externalLink },
               { label: "Copy public link", href: "#", icon: ICONS.link },
@@ -281,7 +292,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                   gap: 9,
                   padding: "8px 12px",
                   borderRadius: 8,
-                  color: "#9ca3af",
+                  color: `${theme.mutedColor}`,
                   fontSize: 13,
                   textDecoration: "none",
                   transition: "all .15s",
@@ -294,7 +305,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             <div
               style={{
                 fontSize: 11,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 opacity: 0.55,
                 padding: "10px 12px 14px",
                 lineHeight: 1.5,
@@ -310,8 +321,8 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
           <div
             style={{
               height: 62,
-              background: "white",
-              borderBottom: "1px solid #f0e4e4",
+              background: theme.cardBg,
+              borderBottom: `1px solid ${theme.border}`,
               boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
               display: "flex",
               alignItems: "center",
@@ -320,9 +331,9 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             }}>
             {/* Breadcrumb */}
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 13, color: "#9ca3af" }}>Dashboard</span>
+              <span style={{ fontSize: 13, color: `${theme.mutedColor}` }}>Dashboard</span>
               <span style={{ fontSize: 13, color: "#d1d5db", margin: "0 7px" }}>›</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#4b5563" }}>Bookings</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: `${theme.slateColor}` }}>Bookings</span>
             </div>
 
             {/* Logo */}
@@ -381,21 +392,21 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
           )}
 
           {/* CONTENT AREA */}
-          <main style={{ flex: 1, background: "#fce8e8", overflowY: "auto", padding: "30px" }}>
+          <main style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
             {/* Page heading */}
             <div style={{ marginBottom: 24 }}>
               <h1
                 style={{
                   fontSize: 24,
                   fontWeight: 800,
-                  color: "#111827",
+                  color: `${theme.inkColor}`,
                   letterSpacing: "-0.4px",
                   margin: "0 0 6px",
                   fontFamily: FONT,
                 }}>
                 Bookings
               </h1>
-              <p style={{ fontSize: 14, color: "#9ca3af", margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: `${theme.mutedColor}`, margin: 0, lineHeight: 1.5 }}>
                 See upcoming and past events booked through your event type links.
               </p>
             </div>
@@ -403,9 +414,9 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             {/* Bookings content — existing functional component */}
             <div
               style={{
-                background: "white",
+                background: theme.cardBg,
                 borderRadius: 20,
-                border: "1px solid #f0e4e4",
+                border: `1px solid ${theme.border}`,
                 boxShadow: "0 2px 16px rgba(0,0,0,0.05)",
                 overflow: "hidden",
                 padding: "20px 24px 24px",
@@ -431,7 +442,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
           }}>
           <div
             style={{
-              background: "white",
+              background: theme.cardBg,
               borderRadius: 16,
               padding: 32,
               width: 420,
@@ -449,7 +460,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                 border: "none",
                 cursor: "pointer",
                 fontSize: 18,
-                color: "#9ca3af",
+                color: `${theme.mutedColor}`,
                 lineHeight: 1,
                 padding: 4,
               }}>
@@ -465,7 +476,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     height: 4,
                     flex: 1,
                     borderRadius: 2,
-                    background: s <= twoFAStep ? "#6366f1" : "#e5e7eb",
+                    background: s <= twoFAStep ? `${theme.brandPrimary}` : `${theme.border}`,
                     transition: "background 0.3s",
                   }}
                 />
@@ -475,7 +486,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             {/* Step 1 */}
             {twoFAStep === 1 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Set up Two-Factor Authentication
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
@@ -488,7 +499,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     borderRadius: 10,
                     padding: "14px 16px",
                     marginBottom: 24,
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${theme.border}`,
                   }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
                     Step 1: Install an authenticator app
@@ -503,7 +514,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     width: "100%",
                     padding: 12,
                     borderRadius: 8,
-                    background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                    background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                     color: "white",
                     fontSize: 14,
                     fontWeight: 600,
@@ -518,7 +529,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             {/* Step 2 */}
             {twoFAStep === 2 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Scan QR Code
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20, lineHeight: 1.6 }}>
@@ -531,7 +542,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     margin: "0 auto 16px",
                     background: "#f3f4f6",
                     borderRadius: 10,
-                    border: "2px solid #e5e7eb",
+                    border: `2px solid ${theme.border}`,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -539,7 +550,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     gap: 6,
                   }}>
                   <span style={{ fontSize: 36 }}>📱</span>
-                  <span style={{ fontSize: 11, color: "#9ca3af" }}>QR Code</span>
+                  <span style={{ fontSize: 11, color: `${theme.mutedColor}` }}>QR Code</span>
                 </div>
                 <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 20 }}>
                   Can&apos;t scan? Enter this key manually:
@@ -577,7 +588,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                       flex: 2,
                       padding: 11,
                       borderRadius: 8,
-                      background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                      background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
                       color: "white",
                       fontSize: 13,
                       fontWeight: 600,
@@ -593,7 +604,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             {/* Step 3 */}
             {twoFAStep === 3 && (
               <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
                   Verify Setup
                 </div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
@@ -613,7 +624,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                     fontSize: 26,
                     fontWeight: 700,
                     letterSpacing: 10,
-                    border: `2px solid ${verificationCode.length === 6 ? "#6366f1" : "#e5e7eb"}`,
+                    border: `2px solid ${verificationCode.length === 6 ? `${theme.brandPrimary}` : `${theme.border}`}`,
                     borderRadius: 10,
                     outline: "none",
                     marginBottom: 20,
@@ -646,9 +657,9 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
                       borderRadius: 8,
                       background:
                         verificationCode.length === 6
-                          ? "linear-gradient(135deg, #6366f1, #818cf8)"
-                          : "#e5e7eb",
-                      color: verificationCode.length === 6 ? "white" : "#9ca3af",
+                          ? `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`
+                          : `${theme.border}`,
+                      color: verificationCode.length === 6 ? "white" : `${theme.mutedColor}`,
                       fontSize: 13,
                       fontWeight: 600,
                       border: "none",
