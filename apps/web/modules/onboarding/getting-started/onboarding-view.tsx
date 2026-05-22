@@ -8,7 +8,6 @@ import type { IconName } from "@calcom/ui/components/icon";
 import { RadioAreaGroup } from "@calcom/ui/components/radio";
 import { AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import posthog from "posthog-js";
 import { useEffect, useRef, useTransition } from "react";
 import { OnboardingCard } from "../components/OnboardingCard";
 import { OnboardingLayout } from "../components/OnboardingLayout";
@@ -69,11 +68,7 @@ export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
   }, [selectedPlan]);
 
   const handleContinue = () => {
-    if (selectedPlan) {
-      posthog.capture("onboarding_plan_continue_clicked", {
-        plan_type: selectedPlan,
-      });
-    }
+    // Tracking removed — Pager Schedule is privacy-first. Zero analytics.
     startTransition(() => {
       if (selectedPlan === "organization") {
         router.push("/onboarding/organization/details");
@@ -161,16 +156,14 @@ export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
           <div className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-xl border border-muted bg-cal-muted p-1">
             <div className="flex w-full flex-col items-start overflow-clip rounded-inherit">
               {/* Plan options */}
-              <RadioAreaGroup.Group
-                value={selectedPlan ?? undefined}
-                onValueChange={(value) => {
-                  const planType = value as PlanType;
-                  setSelectedPlan(planType);
-                  posthog.capture("onboarding_plan_selected", {
-                    plan_type: planType,
-                  });
-                }}
-                className="flex w-full flex-col gap-1 rounded-[10px]">
+<RadioAreaGroup.Group
+                 value={selectedPlan ?? undefined}
+                 onValueChange={(value) => {
+                   const planType = value as PlanType;
+                   setSelectedPlan(planType);
+                   // Tracking removed — Pager Schedule is privacy-first. Zero analytics.
+                 }}
+                 className="flex w-full flex-col gap-1 rounded-[10px]">
                 {plans.map((plan) => {
                   const isSelected = selectedPlan === plan.id;
 

@@ -19,7 +19,7 @@ export const IS_PRODUCTION_BUILD = process.env.NODE_ENV === "production";
 export const ORGANIZER_EMAIL_EXEMPT_DOMAINS = process.env.ORGANIZER_EMAIL_EXEMPT_DOMAINS || "";
 const IS_DEV = CALCOM_ENV === "development";
 export const SINGLE_ORG_SLUG = process.env.NEXT_PUBLIC_SINGLE_ORG_SLUG;
-/** https://app.cal.com */
+/** https://app.pagerschedule.com */
 export const WEBAPP_URL =
   ensureProtocol(process.env.NEXT_PUBLIC_WEBAPP_URL) ||
   VERCEL_URL ||
@@ -34,7 +34,7 @@ export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION || IS_DEV ? WEBAPP_URL : "http
 
 /** @deprecated use `WEBAPP_URL` */
 export const BASE_URL = WEBAPP_URL;
-export const WEBSITE_URL = ensureProtocol(process.env.NEXT_PUBLIC_WEBSITE_URL) || "https://cal.com";
+export const WEBSITE_URL = ensureProtocol(process.env.NEXT_PUBLIC_WEBSITE_URL) || "https://pagerschedule.com";
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Pager Schedule";
 export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "help@pagerschedule.com";
 export const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || "Pager Schedule";
@@ -51,22 +51,25 @@ export const CAL_URL = new URL(WEBAPP_URL).hostname.endsWith(".vercel.app")
   ? WEBAPP_URL
   : ensureProtocol(process.env.NEXT_PUBLIC_WEBSITE_URL) || WEBAPP_URL;
 
-export const IS_CALCOM =
+export const IS_PAGERSCHEDULE =
   WEBAPP_URL &&
-  (new URL(WEBAPP_URL).hostname.endsWith("cal.com") ||
-    new URL(WEBAPP_URL).hostname.endsWith("cal.dev") ||
-    new URL(WEBAPP_URL).hostname.endsWith("cal.qa") ||
-    new URL(WEBAPP_URL).hostname.endsWith("cal-staging.com") ||
-    new URL(WEBAPP_URL).hostname.endsWith("cal.eu"));
+  (new URL(WEBAPP_URL).hostname.endsWith("pagerschedule.com") ||
+    new URL(WEBAPP_URL).hostname.endsWith("pagerschedule.dev") ||
+    new URL(WEBAPP_URL).hostname.endsWith("pagerschedule.qa") ||
+    new URL(WEBAPP_URL).hostname.endsWith("pagerschedule-staging.com") ||
+    new URL(WEBAPP_URL).hostname.endsWith("pagerschedule.eu"));
+
+// Backward compatibility alias
+export const IS_CALCOM = IS_PAGERSCHEDULE;
 
 export const CONSOLE_URL =
-  new URL(WEBAPP_URL).hostname.endsWith(".cal.dev") ||
-  new URL(WEBAPP_URL).hostname.endsWith(".cal.qa") ||
-  new URL(WEBAPP_URL).hostname.endsWith(".cal-staging.com") ||
+  new URL(WEBAPP_URL).hostname.endsWith(".pagerschedule.dev") ||
+  new URL(WEBAPP_URL).hostname.endsWith(".pagerschedule.qa") ||
+  new URL(WEBAPP_URL).hostname.endsWith(".pagerschedule-staging.com") ||
   process.env.NODE_ENV !== "production"
-    ? `https://console.cal.dev`
-    : `https://console.cal.com`;
-const CAL_DOMAINS = [".cal.com", ".cal.dev", ".cal.eu", ".cal.qa"];
+    ? `https://console.pagerschedule.dev`
+    : `https://console.pagerschedule.com`;
+const CAL_DOMAINS = [".pagerschedule.com", ".pagerschedule.dev", ".pagerschedule.eu", ".pagerschedule.qa"];
 const WEBAPP_HOSTNAME = new URL(WEBAPP_URL).hostname;
 export const IS_SELF_HOSTED = !CAL_DOMAINS.some((domain) => WEBAPP_HOSTNAME.endsWith(domain));
 export const EMBED_LIB_URL = process.env.NEXT_PUBLIC_EMBED_LIB_URL || `${WEBAPP_URL}/embed/embed.js`;
@@ -108,12 +111,12 @@ export const APPLE_TOUCH_ICON = "/apple-touch-icon.png";
 export const MSTILE_ICON = "/mstile-150x150.png";
 export const ANDROID_CHROME_ICON_192 = "/android-chrome-192x192.png";
 export const ANDROID_CHROME_ICON_256 = "/android-chrome-256x256.png";
-export const ROADMAP = "https://cal.com/roadmap";
-export const DESKTOP_APP_LINK = "https://cal.com/download";
-export const JOIN_COMMUNITY = "https://github.com/pagerschedule/discussions";
-export const POWERED_BY_URL = "https://go.cal.com/booking";
-export const DOCS_URL = "https://cal.com/docs";
-export const DEVELOPER_DOCS = "https://developer.cal.com";
+export const ROADMAP = "https://pagerschedule.com/roadmap";
+export const DESKTOP_APP_LINK = "https://pagerschedule.com/download";
+export const JOIN_COMMUNITY = "https://github.com/pagerschedule/pagerschedule/discussions";
+export const POWERED_BY_URL = "https://go.pagerschedule.com/booking";
+export const DOCS_URL = "https://pagerschedule.com/docs";
+export const DEVELOPER_DOCS = "https://developer.pagerschedule.com";
 export const SEO_IMG_DEFAULT = `${CAL_URL}/og-image.png`;
 // The Dynamic OG Image is passed through Next's Image API to further optimize it.
 // This results in a 80% smaller image 🤯. It is however important that for the query
@@ -146,18 +149,18 @@ export const ORGANIZATION_SELF_SERVE_PRICE = parseFloat(
 
 // Needed for emails in E2E
 export const IS_MAILHOG_ENABLED = process.env.E2E_TEST_MAILHOG_ENABLED === "1";
-export const CALCOM_VERSION = process.env.NEXT_PUBLIC_CALCOM_VERSION as string;
+export const PAGERSCHEDULE_VERSION = process.env.NEXT_PUBLIC_PAGERSCHEDULE_VERSION as string;
 
 export const APP_CREDENTIAL_SHARING_ENABLED =
-  !!process.env.CALCOM_CREDENTIAL_SYNC_SECRET && !!process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY;
-export const CREDENTIAL_SYNC_SECRET = process.env.CALCOM_CREDENTIAL_SYNC_SECRET;
+  !!process.env.PAGERSCHEDULE_CREDENTIAL_SYNC_SECRET && !!process.env.PAGERSCHEDULE_APP_CREDENTIAL_ENCRYPTION_KEY;
+export const CREDENTIAL_SYNC_SECRET = process.env.PAGERSCHEDULE_CREDENTIAL_SYNC_SECRET;
 export const CREDENTIAL_SYNC_SECRET_HEADER_NAME =
-  process.env.CALCOM_CREDENTIAL_SYNC_HEADER_NAME || "calcom-credential-sync-secret";
+  process.env.PAGERSCHEDULE_CREDENTIAL_SYNC_HEADER_NAME || "pagerschedule-credential-sync-secret";
 
-export const CREDENTIAL_SYNC_ENDPOINT = process.env.CALCOM_CREDENTIAL_SYNC_ENDPOINT;
+export const CREDENTIAL_SYNC_ENDPOINT = process.env.PAGERSCHEDULE_CREDENTIAL_SYNC_ENDPOINT;
 
 // Service Account Encryption Key for encrypting/decrypting service account keys
-export const SERVICE_ACCOUNT_ENCRYPTION_KEY = process.env.CALCOM_SERVICE_ACCOUNT_ENCRYPTION_KEY;
+export const SERVICE_ACCOUNT_ENCRYPTION_KEY = process.env.PAGERSCHEDULE_SERVICE_ACCOUNT_ENCRYPTION_KEY;
 
 export const DEFAULT_LIGHT_BRAND_COLOR = "#292929";
 export const DEFAULT_DARK_BRAND_COLOR = "#fafafa";
@@ -165,7 +168,7 @@ export const DEFAULT_DARK_BRAND_COLOR = "#fafafa";
 export const TOP_BANNER_HEIGHT = 40;
 
 export const IS_PREMIUM_USERNAME_ENABLED =
-  (IS_CALCOM || (process.env.NEXT_PUBLIC_IS_E2E && IS_STRIPE_ENABLED)) &&
+  (IS_PAGERSCHEDULE || (process.env.NEXT_PUBLIC_IS_E2E && IS_STRIPE_ENABLED)) &&
   process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PLAN_PRICE_MONTHLY;
 
 // Max number of invites to join a team/org that can be sent at once
@@ -186,10 +189,10 @@ export const ORG_SELF_SERVE_ENABLED = process.env.NEXT_PUBLIC_ORG_SELF_SERVE_ENA
 export const ORG_MINIMUM_PUBLISHED_TEAMS_SELF_SERVE = 0;
 export const ORG_MINIMUM_PUBLISHED_TEAMS_SELF_SERVE_HELPER_DIALOGUE = 1;
 
-export const CALCOM_PRIVATE_API_ROUTE = process.env.CALCOM_PRIVATE_API_ROUTE || "https://goblin.cal.com";
+export const PAGERSCHEDULE_PRIVATE_API_ROUTE = process.env.PAGERSCHEDULE_PRIVATE_API_ROUTE || "https://goblin.pagerschedule.com";
 export const WEBSITE_PRIVACY_POLICY_URL =
-  process.env.NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL || "https://cal.com/privacy";
-export const WEBSITE_TERMS_URL = process.env.NEXT_PUBLIC_WEBSITE_TERMS_URL || "https://cal.com/terms";
+  process.env.NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL || "https://pagerschedule.com/privacy";
+export const WEBSITE_TERMS_URL = process.env.NEXT_PUBLIC_WEBSITE_TERMS_URL || "https://pagerschedule.com/terms";
 export const LINGO_DOT_DEV_API_KEY = process.env.LINGO_DOT_DEV_API_KEY;
 
 /**
@@ -200,19 +203,19 @@ export const ROLLING_WINDOW_PERIOD_MAX_DAYS_TO_CHECK = 30 + 31;
 
 export const TRANSCRIPTION_STARTED_ICON = IS_PRODUCTION
   ? `${WEBAPP_URL}/sparkles-red.svg`
-  : `https://app.cal.com/sparkles-red.svg`;
+  : `https://app.pagerschedule.com/sparkles-red.svg`;
 
 export const TRANSCRIPTION_STOPPED_ICON = IS_PRODUCTION
   ? `${WEBAPP_URL}/sparkles.svg`
-  : `https://app.cal.com/sparkles.svg`;
+  : `https://app.pagerschedule.com/sparkles.svg`;
 
 export const RECORDING_DEFAULT_ICON = IS_PRODUCTION
   ? `${WEBAPP_URL}/start-recording.svg`
-  : `https://app.cal.com/start-recording.svg`;
+  : `https://app.pagerschedule.com/start-recording.svg`;
 
 export const RECORDING_IN_PROGRESS_ICON = IS_PRODUCTION
   ? `${WEBAPP_URL}/stop-recording.svg`
-  : `https://app.cal.com/stop-recording.svg`;
+  : `https://app.pagerschedule.com/stop-recording.svg`;
 
 export const SCOPE_USERINFO_PROFILE = "https://www.googleapis.com/auth/userinfo.profile";
 export const SCOPE_USERINFO_EMAIL = "https://www.googleapis.com/auth/userinfo.email";
@@ -244,9 +247,9 @@ export const NEXTJS_CACHE_TTL = 3600; // 1 hour
 
 export const DEFAULT_GROUP_ID = "default_group_id";
 
-const _rawCalAiPrice = process.env.NEXT_PUBLIC_CAL_AI_PHONE_NUMBER_MONTHLY_PRICE;
-export const CAL_AI_PHONE_NUMBER_MONTHLY_PRICE = (() => {
-  const parsed = _rawCalAiPrice && _rawCalAiPrice.trim() !== "" ? Number(_rawCalAiPrice) : NaN;
+const _rawPagerScheduleAiPrice = process.env.NEXT_PUBLIC_PAGERSCHEDULE_AI_PHONE_NUMBER_MONTHLY_PRICE;
+export const PAGERSCHEDULE_AI_PHONE_NUMBER_MONTHLY_PRICE = (() => {
+  const parsed = _rawPagerScheduleAiPrice && _rawPagerScheduleAiPrice.trim() !== "" ? Number(_rawPagerScheduleAiPrice) : NaN;
   return Number.isFinite(parsed) ? parsed : 5;
 })();
 
@@ -267,9 +270,9 @@ export const RETELL_AI_TEST_EVENT_TYPE_MAP = (() => {
 export const ENV_PAST_BOOKING_RESCHEDULE_CHANGE_TEAM_IDS =
   process.env._CAL_INTERNAL_PAST_BOOKING_RESCHEDULE_CHANGE_TEAM_IDS;
 
-// Cal Video (Daily) app identifiers
-export const CAL_VIDEO = "daily-video";
-export const CAL_VIDEO_TYPE = "daily_video";
+// Pager Schedule Video (Daily) app identifiers
+export const PAGERSCHEDULE_VIDEO = "daily-video";
+export const PAGERSCHEDULE_VIDEO_TYPE = "daily_video";
 
 export const ORG_TRIAL_DAYS = process.env.STRIPE_ORG_TRIAL_DAYS
   ? Math.max(0, parseInt(process.env.STRIPE_ORG_TRIAL_DAYS, 10))

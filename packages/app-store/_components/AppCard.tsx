@@ -1,6 +1,5 @@
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import Link from "next/link";
-import posthog from "posthog-js";
 
 import { useAppContextWithSchema } from "@calcom/app-store/EventTypeAppContext";
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
@@ -97,10 +96,7 @@ export default function AppCard({
                   size="sm"
                   disabled={!app.enabled || managedDisabled || disableSwitch}
                   onCheckedChange={(enabled) => {
-                    posthog.capture("event_type_app_switch_toggled", {
-                      app_slug: app.slug,
-                      enabled: enabled,
-                    });
+                    // Tracking removed — Pager Schedule is privacy-first. Zero analytics.
                     if (switchOnClick) {
                       switchOnClick(enabled);
                     }

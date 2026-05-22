@@ -149,13 +149,24 @@ export function UserPage(props: PageProps) {
 
           {isEventListEmpty && <EmptyPage name={profile.name || "User"} />}
 
-          <div style={{ borderTop: "1px solid #E4E8F2", padding: "16px 0", textAlign: "center", marginTop: 24 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="Pager Schedule" width={100} height={30} style={{ opacity: 0.6 }} />
-            <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6, fontFamily: "monospace" }}>
-              ◎ Zero tracking on this page
-            </div>
-          </div>
+        {/* Privacy Badge */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: '12px',
+          marginTop: '24px',
+          borderTop: '1px solid #E5E7EB',
+        }}>
+          <span style={{
+            fontSize: '11px',
+            color: '#6B7280',
+            fontFamily: 'monospace',
+          }}>
+            ◎ This booking page contains zero tracking scripts · Powered by Pager Schedule
+          </span>
+        </div>
         </main>
         <Toaster position="bottom-right" />
       </div>

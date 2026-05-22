@@ -563,6 +563,27 @@ const BookerComponent = ({
             {null}
           </m.span>
         )}
+        {/* Privacy Badge - Pager Schedule is privacy-first */}
+        {!hideBranding && !isPlatform && (
+          <div
+            className={classNames(
+              "mb-6 mt-auto pt-6 px-5",
+              layout === BookerLayouts.MONTH_VIEW ? "block" : "hidden"
+            )}>
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#6B7280",
+                fontFamily: "monospace",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}>
+              ◎ This booking page contains zero tracking scripts · Powered by Pager Schedule
+            </span>
+          </div>
+        )}
       </div>
       <>
         {verifyCode && formEmail ? (

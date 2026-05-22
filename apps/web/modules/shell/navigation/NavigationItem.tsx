@@ -9,7 +9,6 @@ import { SkeletonText } from "@calcom/ui/components/skeleton";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import posthog from "posthog-js";
 import type React from "react";
 import { Fragment, useEffect, useState } from "react";
 import { useShouldDisplayNavigationItem } from "./useShouldDisplayNavigationItem";
@@ -32,12 +31,8 @@ const usePersistedExpansionState = (itemName: string) => {
   return [isExpanded, setPersistedExpansion] as const;
 };
 
-const trackNavigationClick = (itemName: string, parentItemName?: string) => {
-  posthog.capture("navigation_item_clicked", {
-    item_name: itemName,
-    parent_name: parentItemName,
-  });
-};
+// Tracking removed — Pager Schedule is privacy-first. Zero analytics.
+const trackNavigationClick = (itemName?: string, parentItemName?: string) => {};
 
 export type NavigationItemType = {
   name: string;

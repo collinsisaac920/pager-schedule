@@ -397,6 +397,7 @@ export const userMetadata = z
         revertTime: z.string().optional(),
       })
       .optional(),
+    ghostOsMode: z.boolean().optional(),
   })
   .nullable();
 

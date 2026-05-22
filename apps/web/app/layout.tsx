@@ -46,7 +46,38 @@ export const metadata = {
     default: "Pager Schedule",
     template: "%s | Pager Schedule",
   },
-  description: "Privacy-first scheduling. Zero tracking. Your meetings belong to you.",
+  description:
+    "The only scheduling tool built for " +
+    "privacy. Zero tracking on your booking " +
+    "page. Works with Protonmail. Apple " +
+    "Calendar supported. EU hosted.",
+  openGraph: {
+    title: "Pager Schedule",
+    description:
+      "Encrypted scheduling. Zero tracking. " +
+      "Your meetings belong to you.",
+    siteName: "Pager Schedule",
+    url: "https://pagerschedule.com",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pager Schedule",
+    description: "Encrypted scheduling. Zero tracking.",
+    site: "@pagerschedule",
+    creator: "@pagerschedule",
+  },
+  keywords: [
+    "scheduling",
+    "privacy",
+    "Calendly alternative",
+    "encrypted scheduling",
+    "Protonmail scheduling",
+    "Apple Calendar",
+    "zero tracking",
+    "GDPR scheduling",
+    "EU hosted",
+  ],
   icons: {
     icon: "/logo-icon.svg",
     apple: "/logo-icon.svg",
@@ -61,11 +92,6 @@ export const metadata = {
   manifest: "/site.webmanifest",
   other: {
     "application-TileColor": "#6366F1",
-  },
-  twitter: {
-    site: "@pagerschedule",
-    creator: "@pagerschedule",
-    card: "summary_large_image",
   },
   robots: {
     index: true,

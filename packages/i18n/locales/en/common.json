@@ -836,6 +836,8 @@
   "change_member_role": "Change team member role",
   "disable_cal_branding": "Disable {{appName}} branding",
   "disable_cal_branding_description": "Hide all {{appName}} branding from your public pages.",
+  "ghost_os_mode": "Ghost OS Mode",
+  "ghost_os_mode_description": "Terminal aesthetic. Phosphor green on pure black. For power users who prefer the command line aesthetic.",
   "hide_book_a_team_member": "Hide book a team member button",
   "hide_book_a_team_member_description": "Hide book a team member button from your public pages.",
   "danger_zone": "Danger zone",

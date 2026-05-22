@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Fragment } from "react";
-import posthog from "posthog-js";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useUrlMatchesCurrentUrl } from "@calcom/lib/hooks/useUrlMatchesCurrentUrl";
@@ -53,9 +52,7 @@ const VerticalTabItem = ({
         <>
           <Link
             onClick={(e) => {
-              if (props.trackingMetadata) {
-                posthog.capture("settings_sidebar_button_clicked", props.trackingMetadata);
-              }
+              // Tracking removed — Pager Schedule is privacy-first. Zero analytics.
               if (props.onClick) {
                 e.preventDefault();
                 props.onClick(name);

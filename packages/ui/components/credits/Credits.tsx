@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { CALCOM_VERSION, IS_SELF_HOSTED } from "@calcom/lib/constants";
+import { PAGERSCHEDULE_VERSION, IS_PAGERSCHEDULE, IS_SELF_HOSTED } from "@calcom/lib/constants";
 
-const CalComVersion = `v.${CALCOM_VERSION}-${!IS_SELF_HOSTED ? "h" : "sh"}`;
+// eslint-disable-next-line turbo/no-undeclared-env-vars
+const vercelCommitHash = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA;
+const commitHash = vercelCommitHash ? `-${vercelCommitHash.slice(0, 7)}` : "";
+const PagerScheduleVersion = `v.${PAGERSCHEDULE_VERSION}-${!IS_SELF_HOSTED ? "h" : "sh"}`;
 
 export default function Credits() {
   const [hasMounted, setHasMounted] = useState(false);
@@ -20,7 +23,23 @@ export default function Credits() {
       <Link href="https://pagerschedule.com" target="_blank" className="hover:underline">
         Pager Schedule
       </Link>{" "}
-      {hasMounted && <>{CalComVersion}</>}
+      {hasMounted && (
+        <>
+          <Link href="https://pagerschedule.com/releases" target="_blank" className="hover:underline">
+            {PagerScheduleVersion}
+          </Link>
+          {vercelCommitHash && IS_PAGERSCHEDULE ? (
+            <Link
+              href={`https://github.com/pagerschedule/pagerschedule/commit/${vercelCommitHash}`}
+              target="_blank"
+              className="hover:underline">
+              {commitHash}
+            </Link>
+          ) : (
+            commitHash
+          )}
+        </>
+      )}
     </small>
   );
 }

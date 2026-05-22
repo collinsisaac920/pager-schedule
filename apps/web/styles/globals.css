@@ -422,3 +422,31 @@ html[dir="rtl"] .react-tel-input .flag-dropdown {
   left: auto !important;
   right: 0 !important;
 }
+
+/* Ghost OS Mode - Terminal aesthetic */
+body.ghost-os {
+  background: #000000 !important;
+  color: #00FF88 !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+body.ghost-os * {
+  border-radius: 2px !important;
+  font-family: 'Courier New', monospace !important;
+  letter-spacing: 0.5px;
+}
+
+body.ghost-os::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,8,3,0.08) 2px,
+    rgba(0,8,3,0.08) 4px
+  );
+}
