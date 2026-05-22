@@ -25,6 +25,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import type { ComponentProps } from "react";
 import React, { useEffect, useMemo, useState } from "react";
+import { PagerScheduleSettingsDashboard } from "@components/dashboard/PagerScheduleSettingsDashboard";
 import Shell from "~/shell/Shell";
 
 const getTabs = (
@@ -520,52 +521,11 @@ type SettingsLayoutProps = {
   permissions?: SettingsPermissions;
 } & ComponentProps<typeof Shell>;
 
-function SettingsLayoutAppDirClient({ children, teamFeatures, permissions, ...rest }: SettingsLayoutProps) {
-  const _pathname = usePathname();
-  const state = useState(false);
-  const [sideContainerOpen, setSideContainerOpen] = state;
-
-  useEffect(() => {
-    const closeSideContainer = () => {
-      if (window.innerWidth >= 1024) {
-        setSideContainerOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", closeSideContainer);
-    return () => {
-      window.removeEventListener("resize", closeSideContainer);
-    };
-  }, [setSideContainerOpen]);
-
-  useEffect(() => {
-    setSideContainerOpen((prev) => (prev ? false : prev));
-  }, [setSideContainerOpen]);
-
+function SettingsLayoutAppDirClient({ children }: SettingsLayoutProps) {
   return (
-    <Shell
-      flexChildrenContainer
-      {...rest}
-      SidebarContainer={
-        <SidebarContainerElement
-          sideContainerOpen={sideContainerOpen}
-          setSideContainerOpen={setSideContainerOpen}
-          teamFeatures={teamFeatures}
-          permissions={permissions}
-        />
-      }
-      drawerState={state}
-      MobileNavigationContainer={null}
-      TopNavContainer={
-        <MobileSettingsContainer onSideContainerOpen={() => setSideContainerOpen(!sideContainerOpen)} />
-      }>
-      <div className="flex flex-1 *:flex-1">
-        <div
-          className={classNames("mx-auto max-w-full justify-center lg:max-w-3xl", rest.containerClassName)}>
-          <ErrorBoundary>{children}</ErrorBoundary>
-        </div>
-      </div>
-    </Shell>
+    <PagerScheduleSettingsDashboard>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </PagerScheduleSettingsDashboard>
   );
 }
 

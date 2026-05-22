@@ -66,6 +66,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
       revalidateTravelSchedules();
       reset(getValues());
       showToast(t("settings_updated_successfully"), "success");
+      window.dispatchEvent(new Event("pager:settings-saved"));
       await update(res);
 
       if (res.locale) {
