@@ -190,8 +190,6 @@ export function PagerScheduleInstalledAppsDashboard({
     .slice(0, 2);
 
   const meta = CATEGORY_META[activeCategory] ?? CATEGORY_META.other;
-  const activeCategoryItem =
-    CATEGORY_ITEMS.find((c) => c.slug === activeCategory) ?? CATEGORY_ITEMS[2];
 
   return (
     <div
