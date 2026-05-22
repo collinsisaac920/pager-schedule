@@ -90,20 +90,26 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
 
     try {
       const response = await TwoFactorAuthAPI.setup(password);
-      const body = await response.json();
+      let body: { error?: string; message?: string; backupCodes?: string[]; dataUri?: string; secret?: string } = {};
+      try {
+        body = await response.json();
+      } catch {
+        setErrorMessage(`Setup failed (HTTP ${response.status} - non-JSON response)`);
+        return;
+      }
 
       if (response.status === 200) {
-        setBackupCodes(body.backupCodes);
+        setBackupCodes(body.backupCodes ?? []);
 
         // create backup codes download url
-        const textBlob = new Blob([body.backupCodes.map(formatBackupCode).join("\n")], {
+        const textBlob = new Blob([(body.backupCodes ?? []).map(formatBackupCode).join("\n")], {
           type: "text/plain",
         });
         if (backupCodesUrl) URL.revokeObjectURL(backupCodesUrl);
         setBackupCodesUrl(URL.createObjectURL(textBlob));
 
-        setDataUri(body.dataUri);
-        setSecret(body.secret);
+        setDataUri(body.dataUri ?? "");
+        setSecret(body.secret ?? "");
         setStep(SetupStep.DisplayQrCode);
         return;
       }
@@ -119,10 +125,10 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
       } else if (body.error === ErrorCode.InternalServerError) {
         setErrorMessage("Server configuration error. Please contact support.");
       } else {
-        setErrorMessage(`${t("something_went_wrong")} (${body.error || body.message || response.status})`);
+        setErrorMessage(`Setup failed (HTTP ${response.status}: ${body.error || body.message || "unknown"})`);
       }
     } catch (e) {
-      setErrorMessage(t("something_went_wrong"));
+      setErrorMessage(`Network error: ${e instanceof Error ? e.message : String(e)}`);
       console.error(t("error_enabling_2fa"), e);
     } finally {
       setIsSubmitting(false);
