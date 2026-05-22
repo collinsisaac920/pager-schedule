@@ -4,12 +4,12 @@ import { availabilityRouter } from "@calcom/trpc/server/routers/viewer/availabil
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { createRouterCaller, getTRPCContext } from "app/_trpc/context";
 import type { PageProps, ReadonlyHeaders, ReadonlyRequestCookies } from "app/_types";
-import { _generateMetadata, getTranslate } from "app/_utils";
+import { _generateMetadata } from "app/_utils";
+import { PagerScheduleAvailabilityDashboard } from "@components/dashboard/PagerScheduleAvailabilityDashboard";
 import { unstable_cache } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AvailabilityCTA, AvailabilityList } from "~/availability/availability-view";
-import { ShellMainAppDir } from "../ShellMainAppDir";
 
 export const generateMetadata = async () => {
   return await _generateMetadata(
@@ -33,9 +33,7 @@ const getCachedAvailabilities = unstable_cache(
   { revalidate: 3600 } // Cache for 1 hour
 );
 
-const Page = async ({ searchParams: _searchParams }: PageProps) => {
-  const searchParams = await _searchParams;
-  const t = await getTranslate();
+const Page = async () => {
   const _headers = await headers();
   const _cookies = await cookies();
   const session = await getServerSession({ req: buildLegacyRequest(_headers, _cookies) });
@@ -53,12 +51,9 @@ const Page = async ({ searchParams: _searchParams }: PageProps) => {
   };
 
   return (
-    <ShellMainAppDir
-      heading={t("availability")}
-      subtitle={t("configure_availability")}
-      CTA={<AvailabilityCTA />}>
+    <PagerScheduleAvailabilityDashboard hiddenCtaSlot={<AvailabilityCTA />}>
       <AvailabilityList availabilities={availabilities ?? { schedules: [] }} />
-    </ShellMainAppDir>
+    </PagerScheduleAvailabilityDashboard>
   );
 };
 
