@@ -3,7 +3,7 @@ import { getScheduleListItemData } from "@calcom/lib/schedules/transformers/getS
 import { availabilityRouter } from "@calcom/trpc/server/routers/viewer/availability/_router";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { createRouterCaller, getTRPCContext } from "app/_trpc/context";
-import type { PageProps, ReadonlyHeaders, ReadonlyRequestCookies } from "app/_types";
+import type { ReadonlyHeaders, ReadonlyRequestCookies } from "app/_types";
 import { _generateMetadata } from "app/_utils";
 import { PagerScheduleAvailabilityDashboard } from "@components/dashboard/PagerScheduleAvailabilityDashboard";
 import { unstable_cache } from "next/cache";
