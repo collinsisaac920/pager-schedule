@@ -18,7 +18,7 @@ import { showToast } from "@calcom/ui/components/toast";
 import AppListCardWebWrapper from "@calcom/web/modules/apps/components/AppListCardWebWrapper";
 import { SkeletonLoader } from "@calcom/web/modules/apps/components/SkeletonLoader";
 import { CalendarListContainer } from "@components/apps/CalendarListContainer";
-import InstalledAppsLayout from "@components/apps/layouts/InstalledAppsLayout";
+import { PagerScheduleInstalledAppsDashboard } from "@components/dashboard/PagerScheduleInstalledAppsDashboard";
 import { QueryCell } from "@lib/QueryCell";
 import { useReducer } from "react";
 
@@ -231,7 +231,7 @@ export default function InstalledApps({ category, connectedCalendars, installedC
 
   return (
     <>
-      <InstalledAppsLayout heading={t("installed_apps")} subtitle={t("manage_your_connected_apps")}>
+      <PagerScheduleInstalledAppsDashboard activeCategory={category}>
         {categoryList.includes(category) && (
           <IntegrationsContainer handleDisconnect={handleDisconnect} variant={category} />
         )}
@@ -248,7 +248,7 @@ export default function InstalledApps({ category, connectedCalendars, installedC
             exclude={[...categoryList, "calendar"]}
           />
         )}
-      </InstalledAppsLayout>
+      </PagerScheduleInstalledAppsDashboard>
       <DisconnectIntegrationModal
         handleModelClose={handleModelClose}
         isOpen={data.isOpen}
