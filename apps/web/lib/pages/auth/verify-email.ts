@@ -1,8 +1,8 @@
 import dayjs from "@calcom/dayjs";
+import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
 import { IS_STRIPE_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
-import { CreationSource, MembershipRole } from "@calcom/prisma/enums";
 import { userMetadata } from "@calcom/prisma/zod-utils";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
@@ -157,8 +157,16 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
   await moveUserToMatchingOrg({ email: user.email });
 
   const gettingStartedPath = await OnboardingPathService.getGettingStartedPath();
+  const destination = hasCompletedOnboarding ? "/event-types" : gettingStartedPath;
 
-  return res.redirect(`${WEBAPP_URL}${hasCompletedOnboarding ? "/event-types" : gettingStartedPath}`);
+  // If the user is already signed in (e.g., kept the tab open after signup),
+  // redirect directly. Otherwise redirect through login with a callbackUrl so
+  // they can sign in and land at the right place without hitting a session wall.
+  const session = await getServerSession({ req });
+  if (session?.user?.id === user.id) {
+    return res.redirect(`${WEBAPP_URL}${destination}`);
+  }
+  return res.redirect(`${WEBAPP_URL}/auth/login?callbackUrl=${encodeURIComponent(destination)}`);
 }
 
 export async function cleanUpVerificationTokens(id: number) {

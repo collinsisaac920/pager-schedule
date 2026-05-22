@@ -1788,7 +1788,9 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
   async function handleGoogleAuth() {
     setLoading(true);
     setError("");
-    await signIn("google", { callbackUrl: "/getting-started" });
+    const params = new URLSearchParams(window.location.search);
+    const callbackUrl = params.get("callbackUrl") || "/";
+    await signIn("google", { callbackUrl });
     setLoading(false);
   }
 
@@ -1801,10 +1803,14 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
       redirect: false,
     });
     setLoading(false);
-    if (res?.error) {
+    if (res?.error || res?.ok === false) {
       setError("Incorrect email or password. Please try again.");
     } else {
-      window.location.href = "/event-types";
+      // Respect callbackUrl from query params (set by email verification redirect),
+      // otherwise let the root page route the user based on their onboarding status.
+      const params = new URLSearchParams(window.location.search);
+      const callbackUrl = params.get("callbackUrl") || "/";
+      window.location.href = callbackUrl;
     }
   }
 
@@ -1857,6 +1863,14 @@ export default function PagerScheduleFlow({ initialTab = "signup" }) {
         }),
       });
       if (res.status === 201) {
+        // Sign in immediately so the user has a valid session when they click the
+        // email verification link. Without this, the link redirect to /event-types
+        // has no session and bounces them back to /auth/login.
+        await signIn("credentials", {
+          email: email.toLowerCase().trim(),
+          password: form.password,
+          redirect: false,
+        });
         setStep1Mode("signup");
         setStep(1);
       } else {
