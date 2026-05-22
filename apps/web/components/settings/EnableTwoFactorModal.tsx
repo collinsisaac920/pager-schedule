@@ -110,8 +110,16 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
 
       if (body.error === ErrorCode.IncorrectPassword) {
         setErrorMessage(t("incorrect_password"));
+      } else if (body.error === ErrorCode.UserMissingPassword) {
+        setErrorMessage("Your account doesn't have a password set. Please set a password first.");
+      } else if (body.error === ErrorCode.ThirdPartyIdentityProviderEnabled) {
+        setErrorMessage("Two-factor auth is not available for accounts using social login.");
+      } else if (body.error === ErrorCode.TwoFactorAlreadyEnabled) {
+        setErrorMessage("Two-factor auth is already enabled on your account.");
+      } else if (body.error === ErrorCode.InternalServerError) {
+        setErrorMessage("Server configuration error. Please contact support.");
       } else {
-        setErrorMessage(t("something_went_wrong"));
+        setErrorMessage(`${t("something_went_wrong")} (${body.error || body.message || response.status})`);
       }
     } catch (e) {
       setErrorMessage(t("something_went_wrong"));
@@ -143,7 +151,7 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
       if (body.error === ErrorCode.IncorrectTwoFactorCode) {
         setErrorMessage(`${t("code_is_incorrect")} ${t("please_try_again")}`);
       } else {
-        setErrorMessage(t("something_went_wrong"));
+        setErrorMessage(`${t("something_went_wrong")} (${body.error || body.message || response.status})`);
       }
     } catch (e) {
       setErrorMessage(t("something_went_wrong"));

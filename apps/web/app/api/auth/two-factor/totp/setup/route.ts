@@ -71,16 +71,21 @@ async function postHandler(req: NextRequest) {
   // Generate backup codes with 10 character length
   const backupCodes = Array.from(Array(10), () => crypto.randomBytes(5).toString("hex"));
 
-  await prisma.user.update({
-    where: {
-      id: session.user.id,
-    },
-    data: {
-      backupCodes: symmetricEncrypt(JSON.stringify(backupCodes), process.env.CALENDSO_ENCRYPTION_KEY),
-      twoFactorEnabled: false,
-      twoFactorSecret: symmetricEncrypt(secret, process.env.CALENDSO_ENCRYPTION_KEY),
-    },
-  });
+  try {
+    await prisma.user.update({
+      where: {
+        id: session.user.id,
+      },
+      data: {
+        backupCodes: symmetricEncrypt(JSON.stringify(backupCodes), process.env.CALENDSO_ENCRYPTION_KEY),
+        twoFactorEnabled: false,
+        twoFactorSecret: symmetricEncrypt(secret, process.env.CALENDSO_ENCRYPTION_KEY),
+      },
+    });
+  } catch (encryptionError) {
+    console.error("Two-factor setup failed during encryption/DB write:", encryptionError);
+    return NextResponse.json({ error: ErrorCode.InternalServerError }, { status: 500 });
+  }
 
   const name = user.email || user.username || user.id.toString();
   const keyUri = authenticator.keyuri(name, process.env.NEXT_PUBLIC_APP_NAME || "Pager Schedule", secret);
