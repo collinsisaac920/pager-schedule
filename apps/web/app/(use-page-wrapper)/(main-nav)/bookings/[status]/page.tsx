@@ -3,8 +3,8 @@ import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { prisma } from "@calcom/prisma";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import type { PageProps } from "app/_types";
-import { _generateMetadata, getTranslate } from "app/_utils";
-import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
+import { _generateMetadata } from "app/_utils";
+import { PagerScheduleBookingsDashboard } from "@components/dashboard/PagerScheduleBookingsDashboard";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -29,7 +29,6 @@ const Page = async ({ params }: PageProps) => {
   if (!parsed.success) {
     redirect("/bookings/upcoming");
   }
-  const t = await getTranslate();
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
 
   if (!session?.user?.id) {
@@ -39,7 +38,6 @@ const Page = async ({ params }: PageProps) => {
   const userId = session.user.id;
   const featuresRepository = new FeaturesRepository(prisma);
 
-  // No teams in cal.diy, so canReadOthersBookings is always false.
   const canReadOthersBookings = false;
 
   const [bookingAuditEnabled, bookingsV3Enabled] = await Promise.all([
@@ -48,13 +46,7 @@ const Page = async ({ params }: PageProps) => {
   ]);
 
   return (
-    <ShellMainAppDir
-      {...(!bookingsV3Enabled
-        ? {
-            heading: t("bookings"),
-            subtitle: t("bookings_description"),
-          }
-        : {})}>
+    <PagerScheduleBookingsDashboard>
       <BookingsList
         status={parsed.data.status}
         userId={userId}
@@ -62,7 +54,7 @@ const Page = async ({ params }: PageProps) => {
         bookingsV3Enabled={bookingsV3Enabled}
         bookingAuditEnabled={bookingAuditEnabled}
       />
-    </ShellMainAppDir>
+    </PagerScheduleBookingsDashboard>
   );
 };
 
