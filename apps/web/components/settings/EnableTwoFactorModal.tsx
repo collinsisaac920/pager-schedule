@@ -65,7 +65,7 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
   };
   const [step, setStep] = useState(SetupStep.ConfirmPassword);
   const [password, setPassword] = useState("");
-  const [backupCodes, setBackupCodes] = useState([]);
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [backupCodesUrl, setBackupCodesUrl] = useState("");
   const [dataUri, setDataUri] = useState("");
   const [secret, setSecret] = useState("");
