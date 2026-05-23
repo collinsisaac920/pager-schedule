@@ -54,7 +54,7 @@ import { dub } from "./dub";
 import { ErrorCode } from "./ErrorCode";
 import CalComAdapter from "./next-auth-custom-adapter";
 import { verifyPassword } from "./verifyPassword";
-import { generateAndStoreOTP, verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
+import { generateAndStoreOTP, sendOtpEmail, verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
 
 type UserWithProfiles = NonNullable<
   Awaited<ReturnType<UserRepository["findByEmailAndIncludeProfilesAndPassword"]>>
@@ -224,10 +224,7 @@ export async function authorizeCredentials(
       } else {
         // No code supplied — generate and email a fresh OTP
         const otp = await generateAndStoreOTP(user.id);
-        const { default: TwoFactorOtpEmail } = await import(
-          "@calcom/emails/templates/two-factor-otp-email"
-        );
-        await new TwoFactorOtpEmail({ to: user.email, otp, expiryMinutes: 10 }).sendEmail();
+        await sendOtpEmail(user.email, otp);
         throw new Error(ErrorCode.OtpSentToEmail);
       }
     } else {
