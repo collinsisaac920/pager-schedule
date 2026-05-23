@@ -377,6 +377,12 @@ enum UserPermissionRole {
   ADMIN
 }
 
+enum TwoFactorMethod {
+  TOTP
+  EMAIL
+  SMS
+}
+
 // It holds the password of a User, separate from the User model to avoid leaking the password hash
 model UserPassword {
   hash   String
@@ -432,6 +438,8 @@ model User {
   timeFormat          Int?                 @default(12)
   twoFactorSecret     String?
   twoFactorEnabled    Boolean              @default(false)
+  twoFactorMethod     TwoFactorMethod      @default(TOTP)
+  phoneForTwoFactor   String?
   backupCodes         String?
   identityProvider    IdentityProvider     @default(CAL)
   identityProviderId  String?

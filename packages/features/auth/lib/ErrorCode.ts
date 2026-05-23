@@ -17,4 +17,7 @@ export enum ErrorCode {
   RateLimitExceeded = "rate-limit-exceeded",
   SocialIdentityProviderRequired = "social-identity-provider-required",
   UserAccountLocked = "user-account-locked",
+  OtpSentToEmail = "otp-sent-to-email",
+  IncorrectOtpCode = "incorrect-otp-code",
+  OtpExpired = "otp-expired",
 }

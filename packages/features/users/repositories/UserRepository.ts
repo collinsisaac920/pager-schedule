@@ -100,6 +100,8 @@ const userSelect = {
   timeFormat: true,
   twoFactorSecret: true,
   twoFactorEnabled: true,
+  twoFactorMethod: true,
+  phoneForTwoFactor: true,
   backupCodes: true,
   identityProviderId: true,
   invitedTo: true,

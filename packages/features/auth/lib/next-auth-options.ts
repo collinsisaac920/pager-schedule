@@ -54,6 +54,7 @@ import { dub } from "./dub";
 import { ErrorCode } from "./ErrorCode";
 import CalComAdapter from "./next-auth-custom-adapter";
 import { verifyPassword } from "./verifyPassword";
+import { generateAndStoreOTP, verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
 
 type UserWithProfiles = NonNullable<
   Awaited<ReturnType<UserRepository["findByEmailAndIncludeProfilesAndPassword"]>>
@@ -211,34 +212,55 @@ export async function authorizeCredentials(
       },
     });
   } else if (user.twoFactorEnabled) {
-    if (!credentials.totpCode) {
-      throw new Error(ErrorCode.SecondFactorRequired);
-    }
+    const method = (user as unknown as { twoFactorMethod?: string }).twoFactorMethod ?? "TOTP";
 
-    if (!user.twoFactorSecret) {
-      console.error(`Two factor is enabled for user ${user.id} but they have no secret`);
-      throw new Error(ErrorCode.InternalServerError);
-    }
+    if (method === "EMAIL") {
+      if (credentials.totpCode) {
+        // Verify the OTP the user submitted
+        const valid = await verifyAndConsumeOTP(user.id, credentials.totpCode);
+        if (!valid) {
+          throw new Error(ErrorCode.IncorrectOtpCode);
+        }
+      } else {
+        // No code supplied — generate and email a fresh OTP
+        const otp = await generateAndStoreOTP(user.id);
+        const { default: TwoFactorOtpEmail } = await import(
+          "@calcom/emails/templates/two-factor-otp-email"
+        );
+        await new TwoFactorOtpEmail({ to: user.email, otp, expiryMinutes: 10 }).sendEmail();
+        throw new Error(ErrorCode.OtpSentToEmail);
+      }
+    } else {
+      // Default TOTP (authenticator app)
+      if (!credentials.totpCode) {
+        throw new Error(ErrorCode.SecondFactorRequired);
+      }
 
-    if (!process.env.CALENDSO_ENCRYPTION_KEY) {
-      console.error(`"Missing encryption key; cannot proceed with two factor login."`);
-      throw new Error(ErrorCode.InternalServerError);
-    }
+      if (!user.twoFactorSecret) {
+        console.error(`Two factor is enabled for user ${user.id} but they have no secret`);
+        throw new Error(ErrorCode.InternalServerError);
+      }
 
-    const secret = symmetricDecrypt(user.twoFactorSecret, process.env.CALENDSO_ENCRYPTION_KEY);
-    if (secret.length !== 32) {
-      console.error(
-        `Two factor secret decryption failed. Expected key with length 32 but got ${secret.length}`
+      if (!process.env.CALENDSO_ENCRYPTION_KEY) {
+        console.error(`"Missing encryption key; cannot proceed with two factor login."`);
+        throw new Error(ErrorCode.InternalServerError);
+      }
+
+      const secret = symmetricDecrypt(user.twoFactorSecret, process.env.CALENDSO_ENCRYPTION_KEY);
+      if (secret.length !== 32) {
+        console.error(
+          `Two factor secret decryption failed. Expected key with length 32 but got ${secret.length}`
+        );
+        throw new Error(ErrorCode.InternalServerError);
+      }
+
+      const isValidToken = (await import("@calcom/lib/totp")).totpAuthenticatorCheck(
+        credentials.totpCode,
+        secret
       );
-      throw new Error(ErrorCode.InternalServerError);
-    }
-
-    const isValidToken = (await import("@calcom/lib/totp")).totpAuthenticatorCheck(
-      credentials.totpCode,
-      secret
-    );
-    if (!isValidToken) {
-      throw new Error(ErrorCode.IncorrectTwoFactorCode);
+      if (!isValidToken) {
+        throw new Error(ErrorCode.IncorrectTwoFactorCode);
+      }
     }
   }
   // Check if the user you are logging into has any active teams

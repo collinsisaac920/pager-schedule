@@ -165,6 +165,10 @@ export default function Login({
       setLastUsed("credentials");
       router.push(callbackUrl);
     } else if (res.error === ErrorCode.SecondFactorRequired) setTwoFactorRequired(true);
+    else if (res.error === ErrorCode.OtpSentToEmail) {
+      setTwoFactorRequired(true);
+      setErrorMessage("A verification code was sent to your email. Enter it below to sign in.");
+    } else if (res.error === ErrorCode.IncorrectOtpCode) setErrorMessage("Incorrect verification code. Please try again.");
     else if (res.error === ErrorCode.IncorrectBackupCode) setErrorMessage(t("incorrect_backup_code"));
     else if (res.error === ErrorCode.MissingBackupCodes) setErrorMessage(t("missing_backup_codes"));
     // fallback if error not found
