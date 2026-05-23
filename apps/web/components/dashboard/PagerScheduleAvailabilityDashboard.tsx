@@ -1,5 +1,6 @@
 "use client";
 
+import { trpc } from "@calcom/trpc/react";
 import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -127,7 +128,9 @@ export function PagerScheduleAvailabilityDashboard({
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [twoFAStep, setTwoFAStep] = useState(1);
   const [verificationCode, setVerificationCode] = useState("");
+  const { data: meData } = trpc.viewer.me.get.useQuery({ includePasswordAdded: false });
   const [show2FABanner, setShow2FABanner] = useState(true);
+  const shouldShowBanner = show2FABanner && !meData?.twoFactorEnabled;
 
   const userName = session?.user?.name ?? "User";
   const initials = userName
@@ -371,7 +374,7 @@ export function PagerScheduleAvailabilityDashboard({
           </div>
 
           {/* 2FA BANNER */}
-          {show2FABanner && (
+          {shouldShowBanner && (
             <div
               style={{
                 background: "linear-gradient(135deg, #fff7ed, #ffedd5)",
