@@ -132,6 +132,7 @@ export const getHandler = async ({ ctx, input }: MeOptions) => {
     defaultScheduleId: user.defaultScheduleId,
     completedOnboarding: user.completedOnboarding,
     twoFactorEnabled: user.twoFactorEnabled,
+    twoFactorMethod: user.twoFactorMethod,
     identityProvider: user.identityProvider,
     identityProviderEmail,
     brandColor: user.brandColor,
