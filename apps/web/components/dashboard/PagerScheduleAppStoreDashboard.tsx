@@ -722,9 +722,8 @@ export function PagerScheduleAppStoreDashboard({
               <div style={{ flex: 1, fontSize: 13.5, color: "#9a3412", lineHeight: 1.5 }}>
                 <strong>Action required:</strong> You are admin but you do not have 2FA enabled yet.
               </div>
-              <button
-                onClick={() => setShow2FAModal(true)}
-                type="button"
+              <Link
+                href="/settings/security/two-factor-auth"
                 style={{
                   padding: "7px 16px",
                   borderRadius: 8,
@@ -732,13 +731,12 @@ export function PagerScheduleAppStoreDashboard({
                   color: "white",
                   fontSize: 13,
                   fontWeight: 600,
-                  border: "none",
-                  cursor: "pointer",
+                  textDecoration: "none",
                   flexShrink: 0,
                   whiteSpace: "nowrap",
                 }}>
                 Enable two-factor authentication
-              </button>
+              </Link>
               <button
                 onClick={() => setShow2FABanner(false)}
                 type="button"
