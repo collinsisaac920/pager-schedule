@@ -7,7 +7,7 @@ import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { SkeletonButton, SkeletonContainer, SkeletonText } from "@calcom/ui/components/skeleton";
 import DisableTwoFactorModal from "@components/settings/DisableTwoFactorModal";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 import EmailTwoFactorSetupModal from "./EmailTwoFactorSetupModal";
 import SmsTwoFactorSetupModal from "./SmsTwoFactorSetupModal";
@@ -41,11 +41,7 @@ const TwoFactorAuthView = () => {
   const userEmail = user?.email ?? "";
 
   const handleSetupSuccess = () => {
-    if (sessionData?.user.role === "INACTIVE_ADMIN") {
-      signOut({ callbackUrl: "/auth/login" });
-    } else {
-      utils.viewer.me.invalidate();
-    }
+    utils.viewer.me.invalidate();
   };
 
   return (

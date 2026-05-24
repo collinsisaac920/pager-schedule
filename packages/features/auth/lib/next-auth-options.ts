@@ -213,8 +213,8 @@ export async function authorizeCredentials(
       },
     });
   } else if (user.twoFactorEnabled) {
-    const method = (user as unknown as { twoFactorMethod?: string }).twoFactorMethod ?? "EMAIL";
-    const phone = (user as unknown as { phoneForTwoFactor?: string | null }).phoneForTwoFactor;
+    const method = (user as { twoFactorMethod?: string | null }).twoFactorMethod ?? "EMAIL";
+    const phone = (user as { phoneForTwoFactor?: string | null }).phoneForTwoFactor;
 
     if (method === "SMS") {
       if (credentials.totpCode) {

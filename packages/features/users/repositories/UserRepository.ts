@@ -349,6 +349,8 @@ export class UserRepository {
         identityProvider: true,
         password: true,
         twoFactorEnabled: true,
+        twoFactorMethod: true,
+        phoneForTwoFactor: true,
         twoFactorSecret: true,
         backupCodes: true,
         locale: true,
