@@ -6,8 +6,9 @@ import type { NextRequest } from "next/server";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { verifyPassword } from "@calcom/features/auth/lib/verifyPassword";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
+import { generateAndStoreOTP, sendOtpEmail } from "@calcom/lib/generateLoginOTP";
 import prisma from "@calcom/prisma";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
@@ -21,28 +22,27 @@ async function postHandler(req: NextRequest) {
 
   await checkRateLimitAndThrowError({
     rateLimitingType: "core",
-    identifier: `api:email-2fa-enable:${session.user.id}`,
+    identifier: `api:email-2fa-send-otp:${session.user.id}`,
   });
 
-  const { otp } = body as { otp?: string };
-  if (!otp) return NextResponse.json({ error: "OTP code is required" }, { status: 400 });
+  const { password } = body as { password?: string };
+  if (!password) return NextResponse.json({ error: "Password is required" }, { status: 400 });
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true },
+    select: { id: true, email: true, password: { select: { hash: true } } },
   });
 
   if (!user) return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  if (!user.password?.hash) return NextResponse.json({ error: ErrorCode.UserMissingPassword }, { status: 400 });
 
-  const isValid = await verifyAndConsumeOTP(user.id, otp);
-  if (!isValid) return NextResponse.json({ error: ErrorCode.IncorrectOtpCode }, { status: 403 });
+  const isCorrectPassword = await verifyPassword(password, user.password.hash);
+  if (!isCorrectPassword) return NextResponse.json({ error: ErrorCode.IncorrectPassword }, { status: 403 });
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { twoFactorEnabled: true, twoFactorMethod: "EMAIL", twoFactorSecret: null, backupCodes: null },
-  });
+  const otp = await generateAndStoreOTP(user.id);
+  await sendOtpEmail(user.email, otp);
 
-  return NextResponse.json({ message: "Email 2FA enabled" });
+  return NextResponse.json({ message: "OTP sent" });
 }
 
 export const POST = defaultResponderForAppDir(postHandler);

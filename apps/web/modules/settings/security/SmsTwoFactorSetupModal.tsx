@@ -9,25 +9,43 @@ import { showToast } from "@calcom/ui/components/toast";
 
 interface Props {
   open: boolean;
-  userEmail: string;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-type Step = "password" | "verify" | "success";
+type Step = "phone" | "verify" | "success";
 
-export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange, onSuccess }: Props) {
-  const [step, setStep] = useState<Step>("password");
+const COUNTRY_CODES = [
+  { code: "+1", label: "US/CA (+1)" },
+  { code: "+44", label: "UK (+44)" },
+  { code: "+61", label: "AU (+61)" },
+  { code: "+91", label: "IN (+91)" },
+  { code: "+49", label: "DE (+49)" },
+  { code: "+33", label: "FR (+33)" },
+  { code: "+81", label: "JP (+81)" },
+  { code: "+55", label: "BR (+55)" },
+  { code: "+52", label: "MX (+52)" },
+  { code: "+34", label: "ES (+34)" },
+];
+
+export default function SmsTwoFactorSetupModal({ open, onOpenChange, onSuccess }: Props) {
+  const [step, setStep] = useState<Step>("phone");
   const [password, setPassword] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
+  const [localNumber, setLocalNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  const maskedEmail = userEmail.replace(/^(.{1,2})(.*)(@.*)$/, (_, a, b, c) => a + "*".repeat(Math.max(b.length, 3)) + c);
+  const fullPhone = `${countryCode}${localNumber.replace(/\D/g, "")}`;
+  const maskedPhone = fullPhone.replace(/(\+\d{1,3})(\d*)(\d{3})$/, (_, cc, mid, last) =>
+    `${cc} ${"*".repeat(Math.max(mid.length, 4))} ${last}`
+  );
 
   function reset() {
-    setStep("password");
+    setStep("phone");
     setPassword("");
+    setLocalNumber("");
     setOtp("");
     setIsLoading(false);
     setCooldown(0);
@@ -36,28 +54,6 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
   function handleClose() {
     reset();
     onOpenChange(false);
-  }
-
-  async function sendCode() {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/auth/two-factor/email/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(data.error ?? "Failed to send verification code", "error");
-        return;
-      }
-      setStep("verify");
-      startCooldown();
-    } catch {
-      showToast("An unexpected error occurred", "error");
-    } finally {
-      setIsLoading(false);
-    }
   }
 
   function startCooldown() {
@@ -70,14 +66,37 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
     }, 1000);
   }
 
+  async function sendCode() {
+    if (!localNumber.replace(/\D/g, "")) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/auth/two-factor/sms/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, phone: fullPhone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to send SMS code", "error");
+        return;
+      }
+      setStep("verify");
+      startCooldown();
+    } catch {
+      showToast("An unexpected error occurred", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function resendCode() {
     if (cooldown > 0) return;
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/two-factor/email/send-otp", {
+      const res = await fetch("/api/auth/two-factor/sms/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, phone: fullPhone }),
       });
       if (res.ok) {
         showToast("A new code has been sent", "success");
@@ -92,14 +111,17 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
     if (otp.length !== 6) return;
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/two-factor/email/enable", {
+      const res = await fetch("/api/auth/two-factor/sms/enable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp }),
+        body: JSON.stringify({ otp, phone: fullPhone }),
       });
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error === "incorrect-otp-code" ? "Incorrect code. Please try again." : (data.error ?? "Verification failed"), "error");
+        showToast(
+          data.error === "incorrect-otp-code" ? "Incorrect code. Please try again." : (data.error ?? "Verification failed"),
+          "error"
+        );
         return;
       }
       setStep("success");
@@ -113,13 +135,11 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent>
-        {step === "password" && (
+        {step === "phone" && (
           <>
-            <DialogHeader title="Enable email verification" />
+            <DialogHeader title="Enable SMS verification" />
             <p className="text-sm text-subtle">
-              {"We'll send a 6-digit verification code to "}
-              <strong>{maskedEmail}</strong>
-              {" each time you sign in."}
+              {"We'll send a 6-digit code to your phone number each time you sign in."}
             </p>
             <form
               onSubmit={(e) => { e.preventDefault(); sendCode(); }}
@@ -131,9 +151,30 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
                 autoComplete="current-password"
                 required
               />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-emphasis">Phone number</label>
+                <div className="flex gap-2">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="rounded-md border border-default bg-default px-2 py-2 text-sm text-emphasis focus:border-brand-default focus:outline-none">
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    placeholder="Phone number"
+                    value={localNumber}
+                    onChange={(e) => setLocalNumber(e.target.value)}
+                    className="flex-1 rounded-md border border-default bg-default px-3 py-2 text-sm text-emphasis placeholder:text-muted focus:border-brand-default focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
               <DialogFooter>
                 <Button type="button" color="minimal" onClick={handleClose}>Cancel</Button>
-                <Button type="submit" loading={isLoading} disabled={!password}>
+                <Button type="submit" loading={isLoading} disabled={!password || !localNumber.replace(/\D/g, "")}>
                   Send code
                 </Button>
               </DialogFooter>
@@ -146,7 +187,7 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
             <DialogHeader title="Enter verification code" />
             <p className="text-sm text-subtle">
               {"Enter the 6-digit code we sent to "}
-              <strong>{maskedEmail}</strong>.
+              <strong>{maskedPhone}</strong>.
             </p>
             <div className="mt-4 space-y-4">
               <input
@@ -168,7 +209,7 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
                 {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
               </button>
               <DialogFooter>
-                <Button type="button" color="minimal" onClick={() => setStep("password")}>Back</Button>
+                <Button type="button" color="minimal" onClick={() => setStep("phone")}>Back</Button>
                 <Button
                   type="button"
                   loading={isLoading}
@@ -183,7 +224,7 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
 
         {step === "success" && (
           <>
-            <DialogHeader title="Email verification enabled" />
+            <DialogHeader title="SMS verification enabled" />
             <div className="mt-2 flex flex-col items-center gap-3 py-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
                 <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -191,13 +232,11 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
                 </svg>
               </div>
               <p className="text-center text-sm text-subtle">
-                {"Your account is now protected. We'll email you a code each time you sign in."}
+                {"Your account is now protected. We'll text you a code each time you sign in."}
               </p>
             </div>
             <DialogFooter>
-              <Button
-                type="button"
-                onClick={() => { handleClose(); onSuccess(); }}>
+              <Button type="button" onClick={() => { handleClose(); onSuccess(); }}>
                 Done
               </Button>
             </DialogFooter>

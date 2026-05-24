@@ -18,6 +18,7 @@ export enum ErrorCode {
   SocialIdentityProviderRequired = "social-identity-provider-required",
   UserAccountLocked = "user-account-locked",
   OtpSentToEmail = "otp-sent-to-email",
+  OtpSentToSms = "otp-sent-to-sms",
   IncorrectOtpCode = "incorrect-otp-code",
   OtpExpired = "otp-expired",
 }

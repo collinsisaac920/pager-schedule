@@ -13,41 +13,45 @@ import { IdentityProvider } from "@calcom/prisma/enums";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-async function handler(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   const body = await parseRequestData(req);
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
 
   if (!session) return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
-  if (!session.user?.id) {
-    console.error("Session is missing a user id.");
-    return NextResponse.json({ error: ErrorCode.InternalServerError }, { status: 500 });
-  }
+  if (!session.user?.id) return NextResponse.json({ error: ErrorCode.InternalServerError }, { status: 500 });
 
   await checkRateLimitAndThrowError({
     rateLimitingType: "core",
-    identifier: `api:2fa-disable:${session.user.id}`,
+    identifier: `api:sms-2fa-disable:${session.user.id}`,
   });
+
+  const { password } = body as { password?: string };
+  if (!password) return NextResponse.json({ error: "Password is required" }, { status: 400 });
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, identityProvider: true, twoFactorEnabled: true, password: { select: { hash: true } } },
+    select: {
+      id: true,
+      identityProvider: true,
+      twoFactorEnabled: true,
+      password: { select: { hash: true } },
+    },
   });
 
   if (!user) return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   if (!user.twoFactorEnabled) return NextResponse.json({ message: "Two factor disabled" });
 
   if (user.password?.hash && user.identityProvider === IdentityProvider.CAL) {
-    if (!body.password) return NextResponse.json({ error: ErrorCode.IncorrectPassword }, { status: 400 });
-    const isCorrectPassword = await verifyPassword(body.password, user.password.hash);
-    if (!isCorrectPassword) return NextResponse.json({ error: ErrorCode.IncorrectPassword }, { status: 400 });
+    const isCorrectPassword = await verifyPassword(password, user.password.hash);
+    if (!isCorrectPassword) return NextResponse.json({ error: ErrorCode.IncorrectPassword }, { status: 403 });
   }
 
   await prisma.user.update({
-    where: { id: session.user.id },
-    data: { twoFactorEnabled: false, twoFactorSecret: null, backupCodes: null },
+    where: { id: user.id },
+    data: { twoFactorEnabled: false, twoFactorSecret: null, backupCodes: null, phoneForTwoFactor: null },
   });
 
-  return NextResponse.json({ message: "Two factor disabled" });
+  return NextResponse.json({ message: "SMS 2FA disabled" });
 }
 
-export const POST = defaultResponderForAppDir(handler);
+export const POST = defaultResponderForAppDir(postHandler);

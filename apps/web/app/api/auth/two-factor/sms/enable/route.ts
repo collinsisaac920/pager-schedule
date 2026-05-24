@@ -8,6 +8,7 @@ import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
+import { isTwilioConfigured } from "@calcom/lib/twilioSms";
 import prisma from "@calcom/prisma";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
@@ -19,13 +20,18 @@ async function postHandler(req: NextRequest) {
   if (!session) return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   if (!session.user?.id) return NextResponse.json({ error: ErrorCode.InternalServerError }, { status: 500 });
 
+  if (!isTwilioConfigured()) {
+    return NextResponse.json({ error: "SMS verification is not configured" }, { status: 503 });
+  }
+
   await checkRateLimitAndThrowError({
     rateLimitingType: "core",
-    identifier: `api:email-2fa-enable:${session.user.id}`,
+    identifier: `api:sms-2fa-enable:${session.user.id}`,
   });
 
-  const { otp } = body as { otp?: string };
+  const { otp, phone } = body as { otp?: string; phone?: string };
   if (!otp) return NextResponse.json({ error: "OTP code is required" }, { status: 400 });
+  if (!phone) return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -39,10 +45,16 @@ async function postHandler(req: NextRequest) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { twoFactorEnabled: true, twoFactorMethod: "EMAIL", twoFactorSecret: null, backupCodes: null },
+    data: {
+      twoFactorEnabled: true,
+      twoFactorMethod: "SMS",
+      twoFactorSecret: null,
+      backupCodes: null,
+      phoneForTwoFactor: phone,
+    },
   });
 
-  return NextResponse.json({ message: "Email 2FA enabled" });
+  return NextResponse.json({ message: "SMS 2FA enabled" });
 }
 
 export const POST = defaultResponderForAppDir(postHandler);

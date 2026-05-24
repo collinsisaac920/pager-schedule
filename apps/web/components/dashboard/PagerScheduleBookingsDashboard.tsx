@@ -1,11 +1,9 @@
 "use client";
 
-import { trpc } from "@calcom/trpc/react";
 import { useTheme } from "@lib/theme-context";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useState } from "react";
 
 interface PagerScheduleBookingsDashboardProps {
   children: ReactNode;
@@ -120,13 +118,6 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
   const alpha = (hex: string, pct: number): string =>
     hex + Math.round(pct * 255).toString(16).padStart(2, "0");
 
-  const [show2FAModal, setShow2FAModal] = useState(false);
-  const [twoFAStep, setTwoFAStep] = useState(1);
-  const [verificationCode, setVerificationCode] = useState("");
-  const { data: meData } = trpc.viewer.me.get.useQuery({ includePasswordAdded: false });
-  const [show2FABanner, setShow2FABanner] = useState(true);
-  const shouldShowBanner = show2FABanner && !meData?.twoFactorEnabled;
-
   const userName = session?.user?.name ?? "User";
   const userEmail = session?.user?.email ?? "";
   const initials = userName
@@ -135,12 +126,6 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
     .join("")
     .toUpperCase()
     .slice(0, 2);
-
-  const closeModal = () => {
-    setShow2FAModal(false);
-    setTwoFAStep(1);
-    setVerificationCode("");
-  };
 
   return (
     <>
@@ -343,56 +328,6 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
             <WaveformLogo size={26} />
           </div>
 
-          {/* 2FA BANNER */}
-          {shouldShowBanner && (
-            <div
-              style={{
-                background: "linear-gradient(135deg, #fff7ed, #ffedd5)",
-                borderBottom: "1px solid #fed7aa",
-                padding: "10px 30px",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>
-                <SvgIcon d={ICONS.warning} size={18} strokeWidth={1.8} />
-              </span>
-              <div style={{ flex: 1, fontSize: 13.5, color: "#9a3412", lineHeight: 1.5 }}>
-                <strong>Action required:</strong> You are admin but you do not have 2FA enabled yet.
-              </div>
-              <Link
-                href="/settings/security/two-factor-auth"
-                style={{
-                  padding: "7px 16px",
-                  borderRadius: 8,
-                  background: "#ea580c",
-                  color: "white",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  flexShrink: 0,
-                  whiteSpace: "nowrap",
-                }}>
-                Enable two-factor authentication
-              </Link>
-              <button
-                onClick={() => setShow2FABanner(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#9a3412",
-                  fontSize: 18,
-                  lineHeight: 1,
-                  padding: "0 4px",
-                  opacity: 0.6,
-                  flexShrink: 0,
-                }}>
-                ×
-              </button>
-            </div>
-          )}
-
           {/* CONTENT AREA */}
           <main style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
             {/* Page heading */}
@@ -429,253 +364,6 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
         </div>
       </div>
 
-      {/* ── 2FA SETUP MODAL ── */}
-      {show2FAModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 200,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: FONT,
-          }}>
-          <div
-            style={{
-              background: theme.cardBg,
-              borderRadius: 16,
-              padding: 32,
-              width: 420,
-              maxWidth: "90vw",
-              position: "relative",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-            }}>
-            <button
-              onClick={closeModal}
-              style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 18,
-                color: `${theme.mutedColor}`,
-                lineHeight: 1,
-                padding: 4,
-              }}>
-              ✕
-            </button>
-
-            {/* Step progress */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-              {[1, 2, 3].map((s) => (
-                <div
-                  key={s}
-                  style={{
-                    height: 4,
-                    flex: 1,
-                    borderRadius: 2,
-                    background: s <= twoFAStep ? `${theme.brandPrimary}` : `${theme.border}`,
-                    transition: "background 0.3s",
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Step 1 */}
-            {twoFAStep === 1 && (
-              <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
-                  Set up Two-Factor Authentication
-                </div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
-                  Add an extra layer of security. You&apos;ll need an authenticator app like Google
-                  Authenticator or Authy.
-                </div>
-                <div
-                  style={{
-                    background: "#f9fafb",
-                    borderRadius: 10,
-                    padding: "14px 16px",
-                    marginBottom: 24,
-                    border: `1px solid ${theme.border}`,
-                  }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Step 1: Install an authenticator app
-                  </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.6 }}>
-                    Download Google Authenticator, Authy, or any TOTP-compatible app on your mobile device.
-                  </div>
-                </div>
-                <button
-                  onClick={() => setTwoFAStep(2)}
-                  style={{
-                    width: "100%",
-                    padding: 12,
-                    borderRadius: 8,
-                    background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
-                    color: "white",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                  }}>
-                  Continue →
-                </button>
-              </div>
-            )}
-
-            {/* Step 2 */}
-            {twoFAStep === 2 && (
-              <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
-                  Scan QR Code
-                </div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20, lineHeight: 1.6 }}>
-                  Open your authenticator app and scan this QR code.
-                </div>
-                <div
-                  style={{
-                    width: 160,
-                    height: 160,
-                    margin: "0 auto 16px",
-                    background: "#f3f4f6",
-                    borderRadius: 10,
-                    border: `2px solid ${theme.border}`,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}>
-                  <span style={{ fontSize: 36 }}>📱</span>
-                  <span style={{ fontSize: 11, color: `${theme.mutedColor}` }}>QR Code</span>
-                </div>
-                <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 20 }}>
-                  Can&apos;t scan? Enter this key manually:
-                  <div
-                    style={{
-                      fontFamily: "monospace",
-                      fontSize: 13,
-                      color: "#374151",
-                      fontWeight: 600,
-                      marginTop: 4,
-                      letterSpacing: 1,
-                    }}>
-                    ABCD EFGH IJKL MNOP
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => setTwoFAStep(1)}
-                    style={{
-                      flex: 1,
-                      padding: 11,
-                      borderRadius: 8,
-                      background: "#f3f4f6",
-                      color: "#374151",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: "none",
-                      cursor: "pointer",
-                    }}>
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => setTwoFAStep(3)}
-                    style={{
-                      flex: 2,
-                      padding: 11,
-                      borderRadius: 8,
-                      background: `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`,
-                      color: "white",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: "none",
-                      cursor: "pointer",
-                    }}>
-                    I&apos;ve scanned it →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3 */}
-            {twoFAStep === 3 && (
-              <div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: `${theme.inkColor}`, marginBottom: 8 }}>
-                  Verify Setup
-                </div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
-                  Enter the 6-digit code shown in your authenticator app to confirm setup.
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  style={{
-                    width: "100%",
-                    padding: 14,
-                    textAlign: "center",
-                    fontSize: 26,
-                    fontWeight: 700,
-                    letterSpacing: 10,
-                    border: `2px solid ${verificationCode.length === 6 ? `${theme.brandPrimary}` : `${theme.border}`}`,
-                    borderRadius: 10,
-                    outline: "none",
-                    marginBottom: 20,
-                    boxSizing: "border-box",
-                    fontFamily: "monospace",
-                    transition: "border-color 0.2s",
-                  }}
-                />
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => setTwoFAStep(2)}
-                    style={{
-                      flex: 1,
-                      padding: 11,
-                      borderRadius: 8,
-                      background: "#f3f4f6",
-                      color: "#374151",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: "none",
-                      cursor: "pointer",
-                    }}>
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => verificationCode.length === 6 && closeModal()}
-                    style={{
-                      flex: 2,
-                      padding: 11,
-                      borderRadius: 8,
-                      background:
-                        verificationCode.length === 6
-                          ? `linear-gradient(135deg, ${theme.brandPrimary}, ${theme.brandPrimary}cc)`
-                          : `${theme.border}`,
-                      color: verificationCode.length === 6 ? "white" : `${theme.mutedColor}`,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: "none",
-                      cursor: verificationCode.length === 6 ? "pointer" : "not-allowed",
-                      transition: "all 0.2s",
-                    }}>
-                    Verify &amp; Enable ✓
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }

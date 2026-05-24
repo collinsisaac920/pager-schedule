@@ -55,6 +55,7 @@ import { ErrorCode } from "./ErrorCode";
 import CalComAdapter from "./next-auth-custom-adapter";
 import { verifyPassword } from "./verifyPassword";
 import { generateAndStoreOTP, sendOtpEmail, verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
+import { isTwilioConfigured, sendSmsOtp } from "@calcom/lib/twilioSms";
 
 type UserWithProfiles = NonNullable<
   Awaited<ReturnType<UserRepository["findByEmailAndIncludeProfilesAndPassword"]>>
@@ -212,51 +213,35 @@ export async function authorizeCredentials(
       },
     });
   } else if (user.twoFactorEnabled) {
-    const method = (user as unknown as { twoFactorMethod?: string }).twoFactorMethod ?? "TOTP";
+    const method = (user as unknown as { twoFactorMethod?: string }).twoFactorMethod ?? "EMAIL";
+    const phone = (user as unknown as { phoneForTwoFactor?: string | null }).phoneForTwoFactor;
 
-    if (method === "EMAIL") {
+    if (method === "SMS") {
       if (credentials.totpCode) {
-        // Verify the OTP the user submitted
         const valid = await verifyAndConsumeOTP(user.id, credentials.totpCode);
-        if (!valid) {
-          throw new Error(ErrorCode.IncorrectOtpCode);
-        }
+        if (!valid) throw new Error(ErrorCode.IncorrectOtpCode);
       } else {
-        // No code supplied — generate and email a fresh OTP
+        if (!phone) {
+          console.error(`SMS 2FA enabled for user ${user.id} but no phone number stored`);
+          throw new Error(ErrorCode.InternalServerError);
+        }
+        if (!isTwilioConfigured()) {
+          console.error("SMS 2FA requested but Twilio is not configured");
+          throw new Error(ErrorCode.InternalServerError);
+        }
+        const otp = await generateAndStoreOTP(user.id);
+        await sendSmsOtp(phone, otp);
+        throw new Error(ErrorCode.OtpSentToSms);
+      }
+    } else {
+      // EMAIL method (default)
+      if (credentials.totpCode) {
+        const valid = await verifyAndConsumeOTP(user.id, credentials.totpCode);
+        if (!valid) throw new Error(ErrorCode.IncorrectOtpCode);
+      } else {
         const otp = await generateAndStoreOTP(user.id);
         await sendOtpEmail(user.email, otp);
         throw new Error(ErrorCode.OtpSentToEmail);
-      }
-    } else {
-      // Default TOTP (authenticator app)
-      if (!credentials.totpCode) {
-        throw new Error(ErrorCode.SecondFactorRequired);
-      }
-
-      if (!user.twoFactorSecret) {
-        console.error(`Two factor is enabled for user ${user.id} but they have no secret`);
-        throw new Error(ErrorCode.InternalServerError);
-      }
-
-      if (!process.env.CALENDSO_ENCRYPTION_KEY) {
-        console.error(`"Missing encryption key; cannot proceed with two factor login."`);
-        throw new Error(ErrorCode.InternalServerError);
-      }
-
-      const secret = symmetricDecrypt(user.twoFactorSecret, process.env.CALENDSO_ENCRYPTION_KEY);
-      if (secret.length !== 32) {
-        console.error(
-          `Two factor secret decryption failed. Expected key with length 32 but got ${secret.length}`
-        );
-        throw new Error(ErrorCode.InternalServerError);
-      }
-
-      const isValidToken = (await import("@calcom/lib/totp")).totpAuthenticatorCheck(
-        credentials.totpCode,
-        secret
-      );
-      if (!isValidToken) {
-        throw new Error(ErrorCode.IncorrectTwoFactorCode);
       }
     }
   }

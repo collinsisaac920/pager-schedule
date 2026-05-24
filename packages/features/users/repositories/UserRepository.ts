@@ -43,6 +43,8 @@ export type SessionUser = {
   createdDate: Date;
   hideBranding: boolean;
   twoFactorEnabled: boolean;
+  twoFactorMethod: string | null;
+  phoneForTwoFactor: string | null;
   identityProvider: string | null;
   identityProviderId: string | null;
   brandColor: string | null;
@@ -1181,6 +1183,8 @@ export class UserRepository {
         createdDate: true,
         hideBranding: true,
         twoFactorEnabled: true,
+        twoFactorMethod: true,
+        phoneForTwoFactor: true,
         identityProvider: true,
         identityProviderId: true,
         brandColor: true,

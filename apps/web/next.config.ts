@@ -58,6 +58,12 @@ const env = process.env as Record<string, string | undefined>;
 
 env.NEXT_PUBLIC_CALCOM_VERSION = version;
 
+// Expose SMS availability to the client based on Twilio credentials
+if (process.env.TWILIO_SID && process.env.TWILIO_TOKEN &&
+    (process.env.TWILIO_PHONE_NUMBER ?? process.env.TWILIO_WHATSAPP_NUMBER)) {
+  env.NEXT_PUBLIC_SMS_2FA_ENABLED = "true";
+}
+
 if (process.env.NODE_ENV === "production" || process.env.CALCOM_ENV === "production") {
   env.TRIGGER_VERSION = TRIGGER_VERSION;
 }

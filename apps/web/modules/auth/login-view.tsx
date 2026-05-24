@@ -10,7 +10,6 @@ import { Alert } from "@calcom/ui/components/alert";
 import { Icon } from "@calcom/ui/components/icon";
 import { LastUsed, useLastUsed } from "@calcom/web/modules/auth/hooks/useLastUsed";
 import AddToHomescreen from "@components/AddToHomescreen";
-import BackupCode from "@components/auth/BackupCode";
 import TwoFactor from "@components/auth/TwoFactor";
 import { Button } from "@coss/ui/components/button";
 import { Field, FieldLabel } from "@coss/ui/components/field";
@@ -123,17 +122,15 @@ export default function Login({
   const methods = useForm<LoginValues>({ resolver: zodResolver(formSchema) });
   const { register, formState } = methods;
   const [twoFactorRequired, setTwoFactorRequired] = useState(!!totpEmail || false);
-  const [twoFactorLostAccess, setTwoFactorLostAccess] = useState(false);
+  const [twoFactorMethod, setTwoFactorMethod] = useState<"email" | "sms">("email");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastUsed, setLastUsed] = useLastUsed();
   const [showPassword, setShowPassword] = useState(false);
   const [magicEmail, setMagicEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const errorMessages: { [key: string]: string } = {
-    // [ErrorCode.SecondFactorRequired]: t("2fa_enabled_instructions"),
-    // Don't leak information about whether an email is registered or not
     [ErrorCode.IncorrectEmailPassword]: t("incorrect_email_password"),
-    [ErrorCode.IncorrectTwoFactorCode]: `${t("incorrect_2fa_code")} ${t("please_try_again")}`,
     [ErrorCode.InternalServerError]: `${t("something_went_wrong")} ${t("please_try_again_and_contact_us")}`,
     [ErrorCode.ThirdPartyIdentityProviderEnabled]: t("account_created_with_identity_provider"),
   };
@@ -160,20 +157,44 @@ export default function Login({
       redirect: false,
     });
     if (!res) setErrorMessage(errorMessages[ErrorCode.InternalServerError]);
-    // we're logged in! let's do a hard refresh to the desired url
     else if (!res.error) {
       setLastUsed("credentials");
       router.push(callbackUrl);
-    } else if (res.error === ErrorCode.SecondFactorRequired) setTwoFactorRequired(true);
-    else if (res.error === ErrorCode.OtpSentToEmail) {
+    } else if (res.error === ErrorCode.OtpSentToEmail) {
+      setTwoFactorMethod("email");
       setTwoFactorRequired(true);
-      setErrorMessage("A verification code was sent to your email. Enter it below to sign in.");
-    } else if (res.error === ErrorCode.IncorrectOtpCode) setErrorMessage("Incorrect verification code. Please try again.");
-    else if (res.error === ErrorCode.IncorrectBackupCode) setErrorMessage(t("incorrect_backup_code"));
-    else if (res.error === ErrorCode.MissingBackupCodes) setErrorMessage(t("missing_backup_codes"));
-    // fallback if error not found
-    else setErrorMessage(errorMessages[res.error] || t("something_went_wrong"));
+      startResendCooldown();
+    } else if (res.error === ErrorCode.OtpSentToSms) {
+      setTwoFactorMethod("sms");
+      setTwoFactorRequired(true);
+      startResendCooldown();
+    } else if (res.error === ErrorCode.IncorrectOtpCode) {
+      setErrorMessage("Incorrect verification code. Please try again.");
+    } else {
+      setErrorMessage(errorMessages[res.error] || t("something_went_wrong"));
+    }
   };
+
+  function startResendCooldown() {
+    setResendCooldown(60);
+    const interval = setInterval(() => {
+      setResendCooldown((c) => {
+        if (c <= 1) { clearInterval(interval); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+  }
+
+  async function handleResend() {
+    if (resendCooldown > 0) return;
+    setErrorMessage(null);
+    // Re-submit with current email/password to trigger another OTP send
+    const values = methods.getValues();
+    const res = await signIn<"credentials">("credentials", { ...values, callbackUrl, redirect: false });
+    if (res?.error === ErrorCode.OtpSentToEmail || res?.error === ErrorCode.OtpSentToSms) {
+      startResendCooldown();
+    }
+  }
 
   const showSocialLogin = isGoogleLoginEnabled || isOutlookLoginEnabled;
   const showSignupLink =
@@ -193,7 +214,11 @@ export default function Login({
 
           {/* Heading */}
           <p className="mb-8 text-center text-sm text-subtle" data-testid="login-subtitle">
-            {twoFactorRequired ? t("2fa_code") : t("welcome_back_sign_in")}
+            {twoFactorRequired
+              ? twoFactorMethod === "sms"
+                ? "Enter the code we sent to your phone"
+                : "Enter the code we sent to your email"
+              : t("welcome_back_sign_in")}
           </p>
 
           <FormProvider {...methods}>
@@ -306,7 +331,7 @@ export default function Login({
               {/* Two Factor */}
               {twoFactorRequired && (
                 <div className="space-y-4">
-                  {!twoFactorLostAccess ? <TwoFactor center /> : <BackupCode center />}
+                  <TwoFactor center />
                 </div>
               )}
 
@@ -396,37 +421,22 @@ export default function Login({
                     <Button
                       variant="ghost"
                       onClick={() => {
-                        if (twoFactorLostAccess) {
-                          setTwoFactorLostAccess(false);
-                          methods.setValue("backupCode", "");
-                        } else {
-                          setTwoFactorRequired(false);
-                          methods.setValue("totpCode", "");
-                        }
+                        setTwoFactorRequired(false);
+                        methods.setValue("totpCode", "");
                         setErrorMessage(null);
                       }}>
                       <Icon name="arrow-left" className="mr-2 size-4" />
                       {t("go_back")}
                     </Button>
-                    {!twoFactorLostAccess && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setTwoFactorLostAccess(true);
-                          setErrorMessage(null);
-                          methods.setValue("totpCode", "");
-                        }}>
-                        <Icon name="lock" className="mr-2 size-4" />
-                        {t("lost_access")}
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      disabled={resendCooldown > 0}
+                      onClick={handleResend}>
+                      {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : "Resend code"}
+                    </Button>
                   </>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      window.location.replace("/");
-                    }}>
+                  <Button variant="ghost" onClick={() => window.location.replace("/")}>
                     {t("cancel")}
                   </Button>
                 )}
