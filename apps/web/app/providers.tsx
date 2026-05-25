@@ -15,6 +15,8 @@ import useIsBookingPage from "@lib/hooks/useIsBookingPage";
 import { initPostHog, posthog } from "@lib/posthog";
 
 import { GeoProvider } from "./GeoContext";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 function PostHogPageviewTracker() {
   const pathname = usePathname();
@@ -48,6 +50,8 @@ export function Providers({ isEmbed, children, country }: ProvidersProps) {
         <TrpcProvider>
           <ToastProvider position="bottom-center">
             <PostHogPageviewTracker />
+            <Analytics />
+            <SpeedInsights />
             {!isEmbed && !isBookingPage && <NotificationSoundHandler />}
             {/* @ts-expect-error FIXME remove this comment when upgrading typescript to v5 */}
             <CacheProvider>

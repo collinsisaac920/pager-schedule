@@ -9,6 +9,8 @@ import { trpc } from "@calcom/trpc/react";
 
 import type { AppProps } from "@lib/app-providers";
 import { PostHogProvider } from "@components/PostHogProvider";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "../styles/globals.css";
 
@@ -25,6 +27,8 @@ function MyApp(props: AppProps) {
           </CacheProvider>
         </WebPushProvider>
       </SessionProvider>
+      <Analytics />
+      <SpeedInsights />
     </PostHogProvider>
   );
 }

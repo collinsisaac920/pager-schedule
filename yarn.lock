@@ -3357,8 +3357,10 @@ __metadata:
     "@types/turndown": "npm:5.0.1"
     "@types/uuid": "npm:8.3.1"
     "@upstash/redis": "npm:1.35.2"
+    "@vercel/analytics": "npm:^2.0.1"
     "@vercel/edge-config": "npm:0.1.1"
     "@vercel/og": "npm:0.6.3"
+    "@vercel/speed-insights": "npm:^2.0.0"
     accept-language-parser: "npm:1.5.0"
     async: "npm:3.2.4"
     autoprefixer: "npm:10.4.19"
@@ -17445,6 +17447,39 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vercel/analytics@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@vercel/analytics@npm:2.0.1"
+  peerDependencies:
+    "@remix-run/react": ^2
+    "@sveltejs/kit": ^1 || ^2
+    next: ">= 13"
+    nuxt: ">= 3"
+    react: ^18 || ^19 || ^19.0.0-rc
+    svelte: ">= 4"
+    vue: ^3
+    vue-router: ^4
+  peerDependenciesMeta:
+    "@remix-run/react":
+      optional: true
+    "@sveltejs/kit":
+      optional: true
+    next:
+      optional: true
+    nuxt:
+      optional: true
+    react:
+      optional: true
+    svelte:
+      optional: true
+    vue:
+      optional: true
+    vue-router:
+      optional: true
+  checksum: 10/ffef3eea08992e40e08d0fc9900396a9433855a4aaca90602bfea935c26faa30b6d208c034b6e249fb8a69c81cb5a11aa3acd725d5b9067fb30a4508879c6383
+  languageName: node
+  linkType: hard
+
 "@vercel/edge-config@npm:0.1.1":
   version: 0.1.1
   resolution: "@vercel/edge-config@npm:0.1.1"
@@ -17472,6 +17507,36 @@ __metadata:
     satori: "npm:0.10.9"
     yoga-wasm-web: "npm:0.3.3"
   checksum: 10/c683d2d4a9029ffc82739a688e00feb061f8ad5fdec7b353428c1a584cd64954d5be66581ac9d9c2038c6113aa2455c3c2479fee7174565b41ca2463cb232bc5
+  languageName: node
+  linkType: hard
+
+"@vercel/speed-insights@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@vercel/speed-insights@npm:2.0.0"
+  peerDependencies:
+    "@sveltejs/kit": ^1 || ^2
+    next: ">= 13"
+    nuxt: ">= 3"
+    react: ^18 || ^19 || ^19.0.0-rc
+    svelte: ">= 4"
+    vue: ^3
+    vue-router: ^4
+  peerDependenciesMeta:
+    "@sveltejs/kit":
+      optional: true
+    next:
+      optional: true
+    nuxt:
+      optional: true
+    react:
+      optional: true
+    svelte:
+      optional: true
+    vue:
+      optional: true
+    vue-router:
+      optional: true
+  checksum: 10/c8bb85c8e9972b1536d19bb36b8cdecfd85b4391b508a8e9f70cc7e55e09266e19896bad45f889fe5da0430884c83bc8628b7d822f0ffd975ec329cab18ea4b5
   languageName: node
   linkType: hard
 
