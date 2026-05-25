@@ -25,6 +25,7 @@ import {
 } from "@coss/ui/icons";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { track, resetUser } from "@lib/analytics";
 import type { MouseEvent } from "react";
 import { useEffect, useState } from "react";
 
@@ -190,6 +191,8 @@ export function UserDropdown({ small }: UserDropdownProps) {
           <MenuItem
             variant="destructive"
             onClick={() => {
+              track("user_logged_out", {});
+              resetUser();
               signOut({ callbackUrl: "/auth/logout" });
             }}>
             <LogOutIcon />

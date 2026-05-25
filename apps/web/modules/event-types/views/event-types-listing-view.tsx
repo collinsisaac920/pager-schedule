@@ -56,6 +56,7 @@ import type React from "react";
 import type { FC } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import { z } from "zod";
+import { track } from "@lib/analytics";
 
 type GetUserEventGroupsResponse = RouterOutputs["viewer"]["eventTypes"]["getUserEventGroups"];
 type GetEventTypesFromGroupsResponse = RouterOutputs["viewer"]["eventTypes"]["getEventTypesFromGroup"];
@@ -640,6 +641,11 @@ export const InfiniteEventTypeList = ({
                                     onClick={() => {
                                       showToast(t("link_copied"), "success");
                                       copyToClipboard(calLink);
+                                      track("booking_link_copied", {
+                                        eventTypeId: type.id,
+                                        slug: type.slug,
+                                        timestamp: new Date().toISOString(),
+                                      });
                                     }}
                                   />
                                 </Tooltip>

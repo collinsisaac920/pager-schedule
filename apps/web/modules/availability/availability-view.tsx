@@ -16,6 +16,7 @@ import { revalidateAvailabilityList } from "app/(use-page-wrapper)/(main-nav)/av
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { track } from "@lib/analytics";
 
 type AvailabilityListProps = {
   availabilities: RouterOutputs["viewer"]["availability"]["list"];
@@ -61,6 +62,7 @@ export function AvailabilityList({ availabilities }: AvailabilityListProps) {
     onSuccess: async ({ schedule }) => {
       await utils.viewer.availability.list.invalidate();
       revalidateAvailabilityList();
+      track("availability_updated", {});
       showToast(
         t("availability_updated_successfully", {
           scheduleName: schedule.name,

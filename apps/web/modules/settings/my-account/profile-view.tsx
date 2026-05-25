@@ -41,6 +41,7 @@ import { useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { CompanyEmailOrganizationBanner } from "./components/CompanyEmailOrganizationBanner";
+import { track } from "@lib/analytics";
 
 interface DeleteAccountValues {
   totpCode: string;
@@ -76,6 +77,7 @@ const ProfileView = ({ user }: Props) => {
       utils.viewer.me.invalidate();
       utils.viewer.me.shouldVerifyEmail.invalidate();
       revalidateSettingsProfile();
+      track("settings_saved", { section: "profile" });
 
       if (res.hasEmailBeenChanged && res.sendEmailVerification) {
         showToast(t("change_of_email_toast", { email: tempFormValues?.email }), "success");

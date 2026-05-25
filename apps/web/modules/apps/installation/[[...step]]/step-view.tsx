@@ -33,6 +33,7 @@ import { EventTypesStepCard } from "@components/apps/installation/EventTypesStep
 import { StepHeader } from "@components/apps/installation/StepHeader";
 
 import { STEPS } from "~/apps/installation/[[...step]]/constants";
+import { track } from "@lib/analytics";
 
 export type TEventType = EventTypeAppSettingsComponentProps["eventType"] &
   Pick<
@@ -167,6 +168,7 @@ const OnboardingPage = ({
     onSuccess: (data) => {
       if (data?.setupPending) return;
       showToast(t("app_successfully_installed"), "success");
+      track("integration_connected", { integration: appMetadata.slug });
     },
     onError: (error) => {
       if (error instanceof Error) showToast(error.message || t("app_could_not_be_installed"), "error");

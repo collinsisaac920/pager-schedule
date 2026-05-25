@@ -13,6 +13,7 @@ import { isValidPhoneNumber } from "libphonenumber-js/max";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useCreateEventType } from "~/event-types/hooks/useCreateEventType";
+import { track } from "@lib/analytics";
 
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL ?? "";
 
@@ -77,6 +78,11 @@ export function CreateEventTypeDialog({ profileOptions }: { profileOptions: Prof
   const permissions = teamProfile?.permissions ?? { canCreateEventType: false };
 
   const onSuccessMutation = (eventType: EventType) => {
+    track("event_type_created", {
+      duration: eventType.length,
+      isHidden: eventType.hidden,
+      timestamp: new Date().toISOString(),
+    });
     router.replace(`/event-types/${eventType.id}${teamId ? "?tabName=team" : ""}`);
     showToast(
       t("event_type_created_successfully", {

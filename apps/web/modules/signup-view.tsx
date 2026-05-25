@@ -309,6 +309,11 @@ export default function Signup({
         return callbackUrlSearchParams ? constructCallBackIfUrlPresent() : constructCallBackIfUrlNotPresent();
       };
 
+      posthog.capture("user_signed_up", {
+        method: "email",
+        timestamp: new Date().toISOString(),
+      });
+
       await signIn<"credentials">("credentials", {
         ...data,
         callbackUrl: constructCallBackUrl(),

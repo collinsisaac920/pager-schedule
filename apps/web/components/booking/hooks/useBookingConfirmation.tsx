@@ -4,6 +4,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui/components/toast";
+import { track } from "@lib/analytics";
 
 interface UseBookingConfirmationOptions {
   isRecurring?: boolean;
@@ -26,11 +27,15 @@ export function useBookingConfirmation(options: UseBookingConfirmationOptions = 
   const { isRecurring = false, isTabRecurring = false, isTabUnconfirmed = false } = options;
 
   const mutation = trpc.viewer.bookings.confirm.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       if (data?.status === BookingStatus.REJECTED) {
         setRejectionDialogIsOpen(false);
         showToast(t("booking_rejection_success"), "success");
       } else {
+        track("booking_received", {
+          bookingId: variables.bookingId,
+          timestamp: new Date().toISOString(),
+        });
         showToast(t("booking_confirmation_success"), "success");
       }
       utils.viewer.bookings.invalidate();

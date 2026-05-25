@@ -26,6 +26,7 @@ import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
+import { track, identifyUser } from "@lib/analytics";
 
 interface LoginValues {
   email: string;
@@ -158,6 +159,7 @@ export default function Login({
     });
     if (!res) setErrorMessage(errorMessages[ErrorCode.InternalServerError]);
     else if (!res.error) {
+      track("user_logged_in", { method: "email" });
       setLastUsed("credentials");
       router.push(callbackUrl);
     } else if (res.error === ErrorCode.OtpSentToEmail) {

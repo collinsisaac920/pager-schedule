@@ -8,6 +8,7 @@ import { WebPushProvider } from "@calcom/web/modules/notifications/components/We
 import { trpc } from "@calcom/trpc/react";
 
 import type { AppProps } from "@lib/app-providers";
+import { PostHogProvider } from "@components/PostHogProvider";
 
 import "../styles/globals.css";
 
@@ -15,14 +16,16 @@ function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
   return (
-    <SessionProvider session={pageProps.session ?? undefined}>
-      <WebPushProvider>
-        {/* @ts-expect-error FIXME remove this comment when upgrading typescript to v5 */}
-        <CacheProvider>
-          {Component.PageWrapper ? <Component.PageWrapper {...props} /> : <Component {...pageProps} />}
-        </CacheProvider>
-      </WebPushProvider>
-    </SessionProvider>
+    <PostHogProvider>
+      <SessionProvider session={pageProps.session ?? undefined}>
+        <WebPushProvider>
+          {/* @ts-expect-error FIXME remove this comment when upgrading typescript to v5 */}
+          <CacheProvider>
+            {Component.PageWrapper ? <Component.PageWrapper {...props} /> : <Component {...pageProps} />}
+          </CacheProvider>
+        </WebPushProvider>
+      </SessionProvider>
+    </PostHogProvider>
   );
 }
 

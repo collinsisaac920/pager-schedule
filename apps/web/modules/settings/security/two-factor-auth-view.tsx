@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 
 import EmailTwoFactorSetupModal from "./EmailTwoFactorSetupModal";
 import SmsTwoFactorSetupModal from "./SmsTwoFactorSetupModal";
+import { track } from "@lib/analytics";
 
 const isSmsEnabled = process.env.NEXT_PUBLIC_SMS_2FA_ENABLED === "true";
 
@@ -41,6 +42,7 @@ const TwoFactorAuthView = () => {
   const userEmail = user?.email ?? "";
 
   const handleSetupSuccess = () => {
+    track("two_factor_enabled", { method: twoFactorMethod });
     utils.viewer.me.invalidate();
   };
 
