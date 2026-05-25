@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -92,15 +92,7 @@ const PasswordView = ({ user }: PasswordViewProps) => {
       formMethods.resetField("oldPassword");
       formMethods.resetField("newPassword");
 
-      if (data?.user.role === "INACTIVE_ADMIN") {
-        /*
-      AdminPasswordBanner component relies on the role returned from the session.
-      Next-Auth doesn't provide a way to revalidate the session cookie,
-      so this a workaround to hide the banner after updating the password.
-      discussion: https://github.com/nextauthjs/next-auth/discussions/4229
-      */
-        signOut({ callbackUrl: "/auth/login" });
-      }
+      utils.viewer.me.invalidate();
     },
     onError: (error) => {
       showToast(`${t("error_updating_password")}, ${t(error.message)}`, "error");
