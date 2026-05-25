@@ -3,6 +3,7 @@ import { config as dotenvConfig } from "dotenv";
 import type { NextConfig } from "next";
 import type { RouteHas } from "next/dist/lib/load-custom-routes";
 import { withAxiom } from "next-axiom";
+import { withSentryConfig } from "@sentry/nextjs";
 import i18nConfig from "@calcom/i18n/next-i18next.config";
 import packageJson from "./package.json";
 import {
@@ -676,4 +677,24 @@ const nextConfig = (phase: string): NextConfig => {
   };
 };
 
-export default (phase: string): NextConfig => plugins.reduce((acc, plugin) => plugin(acc), nextConfig(phase));
+const calConfig = (phase: string): NextConfig => plugins.reduce((acc, plugin) => plugin(acc), nextConfig(phase));
+
+export default withSentryConfig(calConfig, {
+  org: "pager-schedule",
+  project: "pager-schedule",
+  sentryUrl: "https://de.sentry.io",
+  // Route browser events through Next.js to avoid ad-blocker interference
+  tunnelRoute: "/monitoring",
+  // Upload source maps only when auth token is present (skips local dev)
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  // Suppress non-error build output
+  silent: !process.env.CI,
+  // Capture React component display names in error traces
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+  disableLogger: true,
+  automaticVercelMonitors: false,
+});
