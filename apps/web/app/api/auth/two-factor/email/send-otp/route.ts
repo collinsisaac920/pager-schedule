@@ -8,7 +8,8 @@ import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { verifyPassword } from "@calcom/features/auth/lib/verifyPassword";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { generateAndStoreOTP, sendOtpEmail } from "@calcom/lib/generateLoginOTP";
+import { generateAndStoreOTP, OTP_EXPIRY_MINUTES } from "@calcom/lib/generateLoginOTP";
+import TwoFactorOtpEmail from "@calcom/emails/templates/two-factor-otp-email";
 import prisma from "@calcom/prisma";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
@@ -40,7 +41,7 @@ async function postHandler(req: NextRequest) {
   if (!isCorrectPassword) return NextResponse.json({ error: ErrorCode.IncorrectPassword }, { status: 403 });
 
   const otp = await generateAndStoreOTP(user.id);
-  await sendOtpEmail(user.email, otp);
+  await new TwoFactorOtpEmail({ to: user.email, otp, expiryMinutes: OTP_EXPIRY_MINUTES }).sendEmail();
 
   return NextResponse.json({ message: "OTP sent" });
 }

@@ -1,5 +1,5 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { sendTeamInviteEmail } from "@calcom/emails";
+import { sendTeamInviteEmail } from "@calcom/emails/organization-email-service";
 import prisma from "@calcom/prisma";
 import { logAuditEvent } from "@calcom/lib/auditLog";
 import { MembershipRole } from "@calcom/prisma/enums";

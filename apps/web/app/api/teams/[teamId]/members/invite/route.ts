@@ -1,6 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
-import { sendTeamInviteEmail } from "@calcom/emails";
+import { sendTeamInviteEmail } from "@calcom/emails/organization-email-service";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { logAuditEvent } from "@calcom/lib/auditLog";
 import { MembershipRole } from "@calcom/prisma/enums";
