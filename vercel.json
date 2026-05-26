@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "yarn install --no-immutable",
-  "buildCommand": "yarn workspace @calcom/prisma db-deploy && cd apps/web && yarn build",
+  "buildCommand": "cd apps/web && yarn build",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "regions": ["fra1"]
