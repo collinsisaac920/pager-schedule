@@ -533,6 +533,10 @@ model User {
 
   autoOptInFeatures Boolean @default(false)
 
+  // Enterprise relations
+  exportJobs       ExportJob[] @relation("ExportJobs")
+  createdIncidents Incident[]  @relation("IncidentCreator")
+
   @@unique([email])
   @@unique([email, username])
   @@unique([username, organizationId])
@@ -668,6 +672,22 @@ model Team {
   seatChangeLogs    SeatChangeLog[]
   monthlyProrations MonthlyProration[]
 
+  // ── Enterprise: Custom domain (Feature 1) ───────────────────────────────
+  customDomain         String? @unique
+  customDomainEnabled  Boolean @default(false)
+  customDomainVerified Boolean @default(false)
+
+  // ── Enterprise: White-label branding (Feature 2) ────────────────────────
+  brandLogo                 String?
+  brandName                 String?
+  hidePagerScheduleBranding Boolean @default(false)
+
+  // ── Enterprise: Email templates + Analytics + Export (Features 6/8/9) ───
+  emailTemplates EnterpriseEmailTemplate[]
+  exportJobs     ExportJob[]
+  uptimeLogs     UptimeLog[]
+  incidents      Incident[]
+
   @@unique([slug, parentId])
   @@index([parentId])
 }
@@ -759,6 +779,7 @@ model OrganizationSettings {
 }
 
 enum MembershipRole {
+  VIEWER
   MEMBER
   ADMIN
   OWNER
@@ -2871,4 +2892,82 @@ model AttributeSyncFieldMapping {
 
   @@unique([integrationAttributeSyncId, attributeId])
   @@index([integrationAttributeSyncId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Enterprise Feature Models
+// ────────────────────────────────────────────────────────────────────────────
+
+// Feature 8 — Custom email templates
+model EnterpriseEmailTemplate {
+  id           String   @id @default(cuid())
+  teamId       Int
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  templateKey  String // booking_confirmation | booking_reminder | booking_cancellation | new_booking_notification | rescheduled_booking
+  subject      String   @default("")
+  headerText   String   @default("")
+  bodyText     String   @default("")
+  footerText   String   @default("")
+  hideBranding Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([teamId, templateKey])
+  @@index([teamId])
+}
+
+// Feature 6 — Data export jobs
+model ExportJob {
+  id          String    @id @default(cuid())
+  teamId      Int?
+  team        Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User      @relation("ExportJobs", fields: [userId], references: [id], onDelete: Cascade)
+  format      String // csv | json
+  dataType    String // bookings | users | event_types
+  status      String    @default("pending") // pending | processing | done | failed
+  fromDate    DateTime?
+  toDate      DateTime?
+  recordCount Int?
+  fileUrl     String?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([teamId])
+  @@index([userId])
+}
+
+// Feature 10 — SLA uptime monitoring
+model UptimeLog {
+  id         String   @id @default(cuid())
+  teamId     Int?
+  team       Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  service    String // web | database | email | booking_api | calendar_sync
+  status     String // up | degraded | down
+  responseMs Int
+  checkedAt  DateTime @default(now())
+
+  @@index([service, checkedAt])
+  @@index([teamId])
+}
+
+// Feature 10 — Incidents
+model Incident {
+  id          String    @id @default(cuid())
+  teamId      Int?
+  team        Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  title       String
+  description String    @default("")
+  status      String    @default("investigating") // investigating | identified | monitoring | resolved
+  service     String
+  startedAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  createdById Int
+  createdBy   User      @relation("IncidentCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([service])
+  @@index([teamId])
 }
