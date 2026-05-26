@@ -4,105 +4,37 @@ import { useState } from "react";
 
 import { Button } from "@calcom/ui/components/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
-import { PasswordField } from "@calcom/ui/components/form";
+import { Form, PasswordField } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 
 interface Props {
   open: boolean;
-  userEmail: string;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-type Step = "password" | "verify" | "success";
-
-export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange, onSuccess }: Props) {
-  const [step, setStep] = useState<Step>("password");
+export default function EmailTwoFactorSetupModal({ open, onOpenChange, onSuccess }: Props) {
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
 
-  const maskedEmail = userEmail.replace(/^(.{1,2})(.*)(@.*)$/, (_, a, b, c) => a + "*".repeat(Math.max(b.length, 3)) + c);
-
-  function reset() {
-    setStep("password");
-    setPassword("");
-    setOtp("");
-    setIsLoading(false);
-    setCooldown(0);
-  }
-
-  function handleClose() {
-    reset();
-    onOpenChange(false);
-  }
-
-  async function sendCode() {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/auth/two-factor/email/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(data.error ?? "Failed to send verification code", "error");
-        return;
-      }
-      setStep("verify");
-      startCooldown();
-    } catch {
-      showToast("An unexpected error occurred", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function startCooldown() {
-    setCooldown(60);
-    const interval = setInterval(() => {
-      setCooldown((c) => {
-        if (c <= 1) { clearInterval(interval); return 0; }
-        return c - 1;
-      });
-    }, 1000);
-  }
-
-  async function resendCode() {
-    if (cooldown > 0) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/auth/two-factor/email/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      if (res.ok) {
-        showToast("A new code has been sent", "success");
-        startCooldown();
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function verifyCode() {
-    if (otp.length !== 6) return;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/two-factor/email/enable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp }),
+        body: JSON.stringify({ password }),
       });
-      const data = await res.json();
+
       if (!res.ok) {
-        showToast(data.error === "incorrect-otp-code" ? "Incorrect code. Please try again." : (data.error ?? "Verification failed"), "error");
+        const data = await res.json();
+        showToast(data.error ?? "Failed to enable email 2FA", "error");
         return;
       }
-      setStep("success");
+
+      showToast("Email verification enabled. A code will be sent to your email each time you sign in.", "success");
+      onSuccess();
     } catch {
       showToast("An unexpected error occurred", "error");
     } finally {
@@ -111,98 +43,30 @@ export default function EmailTwoFactorSetupModal({ open, userEmail, onOpenChange
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        {step === "password" && (
-          <>
-            <DialogHeader title="Enable email verification" />
-            <p className="text-sm text-subtle">
-              {"We'll send a 6-digit verification code to "}
-              <strong>{maskedEmail}</strong>
-              {" each time you sign in."}
-            </p>
-            <form
-              onSubmit={(e) => { e.preventDefault(); sendCode(); }}
-              className="mt-4 space-y-4">
-              <PasswordField
-                label="Current password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-              <DialogFooter>
-                <Button type="button" color="minimal" onClick={handleClose}>Cancel</Button>
-                <Button type="submit" loading={isLoading} disabled={!password}>
-                  Send code
-                </Button>
-              </DialogFooter>
-            </form>
-          </>
-        )}
-
-        {step === "verify" && (
-          <>
-            <DialogHeader title="Enter verification code" />
-            <p className="text-sm text-subtle">
-              {"Enter the 6-digit code we sent to "}
-              <strong>{maskedEmail}</strong>.
-            </p>
-            <div className="mt-4 space-y-4">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="000000"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="w-full rounded-md border border-default bg-default px-3 py-3 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-brand-default"
-                autoComplete="one-time-code"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={resendCode}
-                disabled={cooldown > 0}
-                className="text-sm text-subtle hover:text-emphasis disabled:cursor-not-allowed disabled:opacity-50">
-                {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
-              </button>
-              <DialogFooter>
-                <Button type="button" color="minimal" onClick={() => setStep("password")}>Back</Button>
-                <Button
-                  type="button"
-                  loading={isLoading}
-                  disabled={otp.length !== 6 || isLoading}
-                  onClick={verifyCode}>
-                  Verify
-                </Button>
-              </DialogFooter>
-            </div>
-          </>
-        )}
-
-        {step === "success" && (
-          <>
-            <DialogHeader title="Email verification enabled" />
-            <div className="mt-2 flex flex-col items-center gap-3 py-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
-                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="text-center text-sm text-subtle">
-                {"Your account is now protected. We'll email you a code each time you sign in."}
-              </p>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                onClick={() => { handleClose(); onSuccess(); }}>
-                Done
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+        <DialogHeader title="Enable email verification" />
+        <p className="text-sm text-subtle">
+          Each time you sign in, we will email a 6-digit code to{" "}
+          <strong>your account email address</strong>. Confirm your password to switch.
+        </p>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <PasswordField
+            label="Current password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+          <DialogFooter>
+            <Button type="button" color="minimal" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={isLoading} disabled={!password}>
+              Enable email 2FA
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
