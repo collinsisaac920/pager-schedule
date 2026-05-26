@@ -1,12 +1,13 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { teamId: string; memberId: string } }
 ) {
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
@@ -22,10 +23,22 @@ export async function DELETE(
   if (!caller || !["OWNER", "ADMIN"].includes(caller.role))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const target = await prisma.membership.findUnique({ where: { id: membershipId }, select: { role: true } });
+  const target = await prisma.membership.findUnique({
+    where: { id: membershipId },
+    select: { role: true, userId: true },
+  });
   if (target?.role === "OWNER")
     return NextResponse.json({ error: "Cannot remove owner" }, { status: 400 });
 
   await prisma.membership.delete({ where: { id: membershipId } });
+
+  await logAuditEvent({
+    teamId,
+    actorId: session.user.id,
+    action: "MEMBER_REMOVED",
+    resource: target?.userId ? `user:${target.userId}` : `membership:${membershipId}`,
+    metadata: { removedRole: target?.role },
+  });
+
   return NextResponse.json({ ok: true });
 }

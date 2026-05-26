@@ -2,6 +2,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
 import { sendTeamInviteEmail } from "@calcom/emails";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { cookies, headers } from "next/headers";
 import type { NextRequest } from "next/server";
@@ -59,6 +60,14 @@ export async function POST(req: NextRequest, { params }: { params: { teamId: str
   } catch {
     // non-fatal
   }
+
+  await logAuditEvent({
+    teamId,
+    actorId: session.user.id,
+    action: "MEMBER_INVITED",
+    resource: `email:${email}`,
+    metadata: { role },
+  });
 
   return NextResponse.json({ ok: true });
 }

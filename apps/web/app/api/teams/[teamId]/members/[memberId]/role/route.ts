@@ -1,5 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
@@ -27,6 +28,20 @@ export async function PATCH(
   if (!caller || caller.role !== "OWNER")
     return NextResponse.json({ error: "Only owners can change roles" }, { status: 403 });
 
+  const previous = await prisma.membership.findUnique({
+    where: { id: membershipId },
+    select: { role: true, userId: true },
+  });
+
   await prisma.membership.update({ where: { id: membershipId }, data: { role } });
+
+  await logAuditEvent({
+    teamId,
+    actorId: session.user.id,
+    action: "ROLE_CHANGED",
+    resource: previous?.userId ? `user:${previous.userId}` : `membership:${membershipId}`,
+    metadata: { from: previous?.role, to: role },
+  });
+
   return NextResponse.json({ ok: true });
 }

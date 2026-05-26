@@ -536,6 +536,7 @@ model User {
   // Enterprise relations
   exportJobs       ExportJob[] @relation("ExportJobs")
   createdIncidents Incident[]  @relation("IncidentCreator")
+  auditLogs        AuditLog[]  @relation("AuditLogActor")
 
   @@unique([email])
   @@unique([email, username])
@@ -682,11 +683,12 @@ model Team {
   brandName                 String?
   hidePagerScheduleBranding Boolean @default(false)
 
-  // ── Enterprise: Email templates + Analytics + Export (Features 6/8/9) ───
+  // ── Enterprise: Email templates + Analytics + Export + Audit (Features 6/8/9/11) ──
   emailTemplates EnterpriseEmailTemplate[]
   exportJobs     ExportJob[]
   uptimeLogs     UptimeLog[]
   incidents      Incident[]
+  auditLogs      AuditLog[]
 
   @@unique([slug, parentId])
   @@index([parentId])
@@ -2970,4 +2972,21 @@ model Incident {
 
   @@index([service])
   @@index([teamId])
+}
+
+// Feature 11 — Audit Log
+model AuditLog {
+  id        String   @id @default(cuid())
+  teamId    Int
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  actorId   Int
+  actor     User     @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action    String // e.g. MEMBER_INVITED, ROLE_CHANGED, BRANDING_UPDATED, DATA_EXPORTED …
+  resource  String? // e.g. "user:42" or "template:booking_confirmation"
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([teamId, createdAt(sort: Desc)])
+  @@index([actorId])
 }

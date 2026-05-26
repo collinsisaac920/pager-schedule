@@ -1,5 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
 import type { NextRequest } from "next/server";
@@ -64,6 +65,13 @@ export async function POST(req: NextRequest, { params }: { params: { teamId: str
 
   if (Object.keys(update).length > 0) {
     await prisma.team.update({ where: { id: teamId }, data: update });
+
+    await logAuditEvent({
+      teamId,
+      actorId: session.user.id,
+      action: "SCHEDULING_UPDATED",
+      metadata: update,
+    });
   }
 
   return NextResponse.json({ ok: true });

@@ -1,5 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
 import type { NextRequest } from "next/server";
@@ -89,6 +90,16 @@ export async function GET(req: NextRequest) {
       recordCount: rows.length,
     },
   });
+
+  if (teamId) {
+    await logAuditEvent({
+      teamId,
+      actorId: session.user.id,
+      action: "DATA_EXPORTED",
+      resource: "bookings",
+      metadata: { format, recordCount: rows.length, from: from?.toISOString(), to: to?.toISOString() },
+    });
+  }
 
   if (format === "csv") {
     return new NextResponse(toCSV(rows), {

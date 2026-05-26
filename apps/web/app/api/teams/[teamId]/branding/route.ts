@@ -1,5 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import prisma from "@calcom/prisma";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
 import type { NextRequest } from "next/server";
@@ -38,6 +39,17 @@ export async function POST(req: NextRequest, { params }: { params: { teamId: str
       brandLogo: body.brandLogo ?? null,
       brandColor: body.brandColor ?? null,
       brandName: body.brandName ?? null,
+      hidePagerScheduleBranding: Boolean(body.hidePagerScheduleBranding),
+    },
+  });
+
+  await logAuditEvent({
+    teamId,
+    actorId: session.user.id,
+    action: "BRANDING_UPDATED",
+    metadata: {
+      brandName: body.brandName,
+      hasBrandLogo: Boolean(body.brandLogo),
       hidePagerScheduleBranding: Boolean(body.hidePagerScheduleBranding),
     },
   });

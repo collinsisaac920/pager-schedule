@@ -1,6 +1,7 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { sendTeamInviteEmail } from "@calcom/emails";
 import prisma from "@calcom/prisma";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
@@ -92,6 +93,13 @@ export async function POST(req: NextRequest, { params }: { params: { teamId: str
   const invited = results.filter((r) => r.status === "invited").length;
   const skipped = results.filter((r) => r.status === "already_member").length;
   const errors = results.filter((r) => r.status === "error").length;
+
+  await logAuditEvent({
+    teamId,
+    actorId: session.user.id,
+    action: "BULK_INVITE",
+    metadata: { invited, skipped, errors, total: invites.length },
+  });
 
   return NextResponse.json({ results, summary: { invited, skipped, errors } });
 }
