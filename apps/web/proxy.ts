@@ -4,6 +4,14 @@ import { get } from "@vercel/edge-config";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+// Hostnames that are the platform itself — custom domain routing skips these
+const PLATFORM_HOSTNAMES = new Set([
+  "pagerschedule.com",
+  "www.pagerschedule.com",
+  "localhost",
+  "localhost:3000",
+]);
+
 const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
   try {
     return get<T>(key);
@@ -67,6 +75,36 @@ const shouldEnforceCsp = (url: URL) => {
 
 const proxy = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
+
+  // Custom domain routing: rewrite requests from team custom domains
+  const hostname = req.headers.get("host") ?? "";
+  const bareHostname = hostname.split(":")[0];
+  if (
+    !PLATFORM_HOSTNAMES.has(hostname) &&
+    !PLATFORM_HOSTNAMES.has(bareHostname) &&
+    !hostname.endsWith(".vercel.app") &&
+    !url.pathname.startsWith("/_next") &&
+    !url.pathname.startsWith("/api/teams/by-domain")
+  ) {
+    try {
+      const lookupUrl = new URL(
+        `/api/teams/by-domain?domain=${encodeURIComponent(hostname)}`,
+        req.nextUrl.origin
+      );
+      const res = await fetch(lookupUrl.toString(), { headers: { "x-internal": "1" } });
+      if (res.ok) {
+        const { teamSlug } = (await res.json()) as { teamSlug?: string };
+        if (teamSlug) {
+          const rewritten = url.clone();
+          const originalPath = rewritten.pathname === "/" ? "" : rewritten.pathname;
+          rewritten.pathname = `/team/${teamSlug}${originalPath}`;
+          return NextResponse.rewrite(rewritten);
+        }
+      }
+    } catch {
+      // Network error — fall through to normal handling
+    }
+  }
   const reqWithEnrichedHeaders = enrichRequestWithHeaders({ req });
   const requestHeaders = new Headers(reqWithEnrichedHeaders.headers);
 
@@ -163,7 +201,8 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
 }
 
 export const config = {
-  matcher: ["/auth/login", "/login", "/apps/installed", "/auth/logout", "/:path*/embed", "/availability", "/api/auth/signup"],
+  // Run on all paths except Next.js internals and static assets
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 
 export default proxy;
