@@ -450,3 +450,72 @@ body.ghost-os::after {
     rgba(0,8,3,0.08) 4px
   );
 }
+
+/* ── PagerSchedule dashboard responsive layout ── */
+@media (max-width: 767px) {
+  /* Hide the sidebar on mobile */
+  .ps-sidebar {
+    display: none !important;
+  }
+
+  /* Main content takes full width */
+  .ps-main-area {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Add bottom padding so content clears the mobile nav bar */
+  .ps-main-scroll {
+    padding-bottom: 80px !important;
+  }
+
+  /* Reduce top-bar padding on mobile */
+  .ps-topbar {
+    padding: 0 16px !important;
+  }
+
+  /* Stat cards: single column on mobile */
+  .ps-stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce content padding on mobile */
+  .ps-content-padding {
+    padding: 16px !important;
+  }
+
+  /* Breadcrumb hidden on mobile */
+  .ps-breadcrumb {
+    display: none !important;
+  }
+
+  /* Search bar hidden on mobile (icon-only top bar) */
+  .ps-search-input {
+    display: none !important;
+  }
+
+  /* Make page headings smaller on mobile */
+  .ps-page-heading {
+    font-size: 20px !important;
+  }
+}
+
+/* Bottom mobile nav — fixed at bottom, only visible on mobile */
+.ps-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .ps-mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    z-index: 40;
+    align-items: stretch;
+  }
+}

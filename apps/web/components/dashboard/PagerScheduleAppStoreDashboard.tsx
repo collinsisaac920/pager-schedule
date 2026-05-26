@@ -393,6 +393,7 @@ export function PagerScheduleAppStoreDashboard({
         }}>
         {/* ── SIDEBAR ── */}
         <aside
+          className="ps-sidebar"
           style={{
             width: 224,
             background: theme.sidebarBg,
@@ -631,6 +632,7 @@ export function PagerScheduleAppStoreDashboard({
 
         {/* ── MAIN AREA ── */}
         <div
+          className="ps-main-area"
           style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           {/* TOP BAR */}
           <div
@@ -692,7 +694,7 @@ export function PagerScheduleAppStoreDashboard({
           </div>
 
           {/* CONTENT */}
-          <main style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
+          <main className="ps-main-scroll" style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
             {/* Heading */}
             <div style={{ marginBottom: 32 }}>
               <h1

@@ -144,6 +144,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
         }}>
         {/* ── SIDEBAR ── */}
         <aside
+          className="ps-sidebar"
           style={{
             width: 224,
             background: theme.sidebarBg,
@@ -304,7 +305,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
         </aside>
 
         {/* ── MAIN AREA ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        <div className="ps-main-area" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           {/* TOP BAR */}
           <div
             style={{
@@ -329,7 +330,7 @@ export function PagerScheduleBookingsDashboard({ children }: PagerScheduleBookin
           </div>
 
           {/* CONTENT AREA */}
-          <main style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
+          <main className="ps-main-scroll" style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "30px" }}>
             {/* Page heading */}
             <div style={{ marginBottom: 24 }}>
               <h1

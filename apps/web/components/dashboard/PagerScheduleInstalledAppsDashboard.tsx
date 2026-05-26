@@ -217,6 +217,7 @@ export function PagerScheduleInstalledAppsDashboard({
       }}>
       {/* ── SIDEBAR ── */}
       <aside
+        className="ps-sidebar"
         style={{
           width: 224,
           background: theme.sidebarBg,
@@ -451,7 +452,7 @@ export function PagerScheduleInstalledAppsDashboard({
       </aside>
 
       {/* ── MAIN AREA ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+      <div className="ps-main-area" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         {/* TOP BAR */}
         <div
           style={{
@@ -526,6 +527,7 @@ export function PagerScheduleInstalledAppsDashboard({
 
           {/* Right content panel */}
           <div
+            className="ps-main-scroll"
             style={{
               flex: 1,
               background: `${theme.pageBg}`,

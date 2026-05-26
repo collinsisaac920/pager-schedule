@@ -146,6 +146,7 @@ export function PagerScheduleDashboard({
         }}>
         {/* ── SIDEBAR ── */}
         <aside
+          className="ps-sidebar"
           style={{
             width: 224,
             background: theme.sidebarBg,
@@ -264,7 +265,7 @@ export function PagerScheduleDashboard({
         </aside>
 
         {/* ── MAIN AREA ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        <div className="ps-main-area" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           {/* TOP BAR */}
           <div
             style={{
@@ -346,9 +347,11 @@ export function PagerScheduleDashboard({
 
           {/* CONTENT AREA */}
           <main
+            className="ps-main-scroll"
             style={{ flex: 1, background: `${theme.pageBg}`, overflowY: "auto", padding: "24px", position: "relative" }}>
             {/* Stat cards */}
             <div
+              className="ps-stat-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
