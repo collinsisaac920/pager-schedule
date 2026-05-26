@@ -249,7 +249,9 @@ const nextConfig = (phase: string): NextConfig => {
     experimental: {
       optimizePackageImports: ["@calcom/ui"],
     },
-    productionBrowserSourceMaps: true,
+    // Source maps must never be public — upload to Sentry via CI instead.
+    // Serving .map files exposes full TypeScript source to any browser.
+    productionBrowserSourceMaps: false,
     transpilePackages: [
       "@calcom/app-store",
       "@calcom/dayjs",
@@ -359,9 +361,19 @@ const nextConfig = (phase: string): NextConfig => {
           source: "/icons/sprite.svg",
           destination: `${process.env.NEXT_PUBLIC_WEBAPP_URL}/icons/sprite.svg`,
         },
+        // Dub link tracking proxy — explicit paths only; wildcard removed to
+        // prevent SSRF / path-traversal forwarding to arbitrary Dub endpoints.
         {
-          source: "/_proxy/dub/track/:path",
-          destination: "https://api.dub.co/track/:path",
+          source: "/_proxy/dub/track/click",
+          destination: "https://api.dub.co/track/click",
+        },
+        {
+          source: "/_proxy/dub/track/lead",
+          destination: "https://api.dub.co/track/lead",
+        },
+        {
+          source: "/_proxy/dub/track/sale",
+          destination: "https://api.dub.co/track/sale",
         },
         {
           source: "/:user/avatar.png",
@@ -393,6 +405,63 @@ const nextConfig = (phase: string): NextConfig => {
         value: "*",
       };
 
+      // ---------------------------------------------------------------------------
+      // Content Security Policy
+      // Phase 1 starter CSP — allows 'unsafe-inline'/'unsafe-eval' until nonce
+      // infrastructure is implemented in a follow-up.  Restricts the most
+      // dangerous injection vectors (object, base-uri, form-action, frame-ancestors)
+      // without risking breakage of Next.js hydration or existing integrations.
+      //
+      // Tighten progressively: remove 'unsafe-eval', then remove 'unsafe-inline'
+      // once nonce-based CSP is wired through _document / middleware.
+      // ---------------------------------------------------------------------------
+      const CSP_DIRECTIVES = [
+        "default-src 'self'",
+        // Next.js requires 'unsafe-inline' + 'unsafe-eval' for hydration until
+        // nonce-based CSP is implemented.
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://eu.posthog.com https://app.posthog.com https://vercel.live https://*.vercel.live",
+        "style-src 'self' 'unsafe-inline'",
+        // Images: allow data URIs (avatars), blobs (uploads), and HTTPS sources.
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data:",
+        // API connections: restrict to known third-party endpoints.
+        [
+          "connect-src 'self'",
+          // PostHog EU ingest
+          "https://eu.posthog.com",
+          "https://eu.i.posthog.com",
+          "https://app.posthog.com",
+          // Sentry EU ingest
+          "https://de.sentry.io",
+          "https://*.ingest.sentry.io",
+          // Vercel analytics + speed insights
+          "https://vitals.vercel-insights.com",
+          "https://vercel.live",
+          // Dub link tracking (proxied via /_proxy/dub/track/*)
+          "https://api.dub.co",
+          // Twilio Verify (server-side; browser may initiate CORS preflight)
+          "https://verify.twilio.com",
+          // Axiom logging
+          "https://api.axiom.co",
+          // WebSocket for Next.js HMR in dev
+          ...(process.env.NODE_ENV !== "production" ? ["ws://localhost:*"] : []),
+        ].join(" "),
+        // Booking embed runs in an iframe on third-party sites — allow framing
+        // of /embed paths from any origin, but block all other pages from being
+        // framed (replaces X-Frame-Options: DENY on non-embed pages).
+        "frame-ancestors 'self'",
+        // Prevent plugin embedding (Flash, etc.) entirely.
+        "object-src 'none'",
+        // Prevent <base> tag hijacking.
+        "base-uri 'self'",
+        // Restrict where forms can be submitted.
+        "form-action 'self' https://checkout.stripe.com",
+        // Workers: only same-origin.
+        "worker-src 'self' blob:",
+        // Enforce HTTPS for embedded resources in production.
+        ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
+      ].join("; ");
+
       return [
         {
           source: "/auth/:path*",
@@ -423,6 +492,54 @@ const nextConfig = (phase: string): NextConfig => {
               key: "Referrer-Policy",
               value: "strict-origin-when-cross-origin",
             },
+            // Block clickjacking on all pages that don't already override this.
+            {
+              key: "X-Frame-Options",
+              value: "SAMEORIGIN",
+            },
+            // Disable browser DNS pre-fetching to reduce information leakage.
+            {
+              key: "X-DNS-Prefetch-Control",
+              value: "off",
+            },
+            // Restrict browser feature access to reduce the attack surface.
+            // interest-cohort and browsing-topics opt out of Privacy Sandbox profiling.
+            {
+              key: "Permissions-Policy",
+              value: [
+                "camera=()",
+                "microphone=()",
+                "geolocation=()",
+                "payment=()",
+                "usb=()",
+                "magnetometer=()",
+                "gyroscope=()",
+                "accelerometer=()",
+                "interest-cohort=()",
+                "browsing-topics=()",
+              ].join(", "),
+            },
+            // Prevent cross-origin window.opener access.
+            {
+              key: "Cross-Origin-Opener-Policy",
+              value: "same-origin-allow-popups",
+            },
+            // 2-year HSTS with subdomains and preload.
+            // includeSubDomains ensures org subdomains also enforce HTTPS.
+            // Submit domain to hstspreload.org after verifying all subdomains serve HTTPS.
+            ...(process.env.NODE_ENV === "production"
+              ? [
+                  {
+                    key: "Strict-Transport-Security",
+                    value: "max-age=63072000; includeSubDomains; preload",
+                  },
+                ]
+              : []),
+            // Content Security Policy (Phase 1 starter).
+            {
+              key: "Content-Security-Policy",
+              value: CSP_DIRECTIVES,
+            },
           ],
         },
         {
@@ -433,21 +550,9 @@ const nextConfig = (phase: string): NextConfig => {
           source: "/:path*/embed",
           headers: [CORP_CROSS_ORIGIN_HEADER],
         },
-        {
-          source: "/:path*",
-          has: [
-            {
-              type: "host" as const,
-              value: "cal.com",
-            },
-          ],
-          headers: [
-            {
-              key: "Referrer-Policy",
-              value: "no-referrer-when-downgrade",
-            },
-          ],
-        },
+        // Removed: the cal.com-specific override that weakened Referrer-Policy
+        // from strict-origin-when-cross-origin to no-referrer-when-downgrade.
+        // The global strict-origin-when-cross-origin policy is correct everywhere.
         {
           source: "/api/avatar/:path*",
           headers: [CORP_CROSS_ORIGIN_HEADER],
@@ -590,9 +695,14 @@ const nextConfig = (phase: string): NextConfig => {
           destination: "/404",
           permanent: false,
         },
+        // Legacy booking-direct redirect.
+        // Email removed from the forwarded query string — /api/link identifies
+        // the user from the encrypted token, not from a plaintext email in the URL.
+        // The :email segment is still in the source pattern for backward compatibility
+        // with links already in circulation, but we no longer forward it downstream.
         {
           source: "/booking/direct/:action/:email/:bookingUid/:oldToken",
-          destination: "/api/link?action=:action&email=:email&bookingUid=:bookingUid&oldToken=:oldToken",
+          destination: "/api/link?action=:action&bookingUid=:bookingUid&token=:oldToken",
           permanent: true,
         },
         {

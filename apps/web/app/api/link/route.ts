@@ -1,6 +1,7 @@
 import process from "node:process";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt } from "@calcom/lib/crypto";
+import { getEncryptionKey } from "@calcom/lib/getEncryptionKey";
 import { distributedTracing } from "@calcom/lib/tracing/factory";
 import prisma from "@calcom/prisma";
 import { confirmHandler } from "@calcom/trpc/server/routers/viewer/bookings/confirm.handler";
@@ -17,17 +18,23 @@ enum DirectAction {
 
 const querySchema = z.object({
   action: z.nativeEnum(DirectAction),
-  token: z.string(),
-  reason: z.string().optional(),
+  // Encrypted token; cap at 4 KB to prevent oversized-payload DoS.
+  token: z.string().max(4096),
+  // Rejection reason; cap at 1 KB to prevent oversized input.
+  reason: z.string().max(1024).optional(),
 });
 
+// Booking UIDs are cuid2-style slugs.
+const BOOKING_UID_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+
 const decryptedSchema = z.object({
-  bookingUid: z.string(),
-  userId: z.number().int(),
-  platformClientId: z.string().optional(),
-  platformRescheduleUrl: z.string().optional(),
-  platformCancelUrl: z.string().optional(),
-  platformBookingUrl: z.string().optional(),
+  bookingUid: z.string().regex(BOOKING_UID_RE, "Invalid booking UID in token"),
+  userId: z.number().int().positive(),
+  platformClientId: z.string().max(256).optional(),
+  // Platform URLs come from our own encrypted payload; validate they are safe URLs.
+  platformRescheduleUrl: z.string().url().max(2048).optional(),
+  platformCancelUrl: z.string().url().max(2048).optional(),
+  platformBookingUrl: z.string().url().max(2048).optional(),
 });
 
 async function handler(request: NextRequest) {
@@ -36,7 +43,7 @@ async function handler(request: NextRequest) {
   const { action, token, reason } = querySchema.parse(Object.fromEntries(searchParams.entries()));
 
   const decryptedData = JSON.parse(
-    symmetricDecrypt(decodeURIComponent(token), process.env.CALENDSO_ENCRYPTION_KEY || "")
+    symmetricDecrypt(decodeURIComponent(token), getEncryptionKey())
   );
 
   const {

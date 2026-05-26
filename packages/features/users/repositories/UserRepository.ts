@@ -339,6 +339,9 @@ export class UserRepository {
       },
       select: {
         locked: true,
+        failedLoginAttempts: true,
+        lastFailedLoginAt: true,
+        lockUntil: true,
         role: true,
         id: true,
         uuid: true,
@@ -347,12 +350,14 @@ export class UserRepository {
         email: true,
         metadata: true,
         identityProvider: true,
-        password: true,
+        password: { select: { hash: true } },
         twoFactorEnabled: true,
         twoFactorMethod: true,
         phoneForTwoFactor: true,
         twoFactorSecret: true,
         backupCodes: true,
+        twoFactorMethod: true,
+        phoneForTwoFactor: true,
         locale: true,
         teams: {
           include: {

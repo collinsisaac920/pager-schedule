@@ -1,9 +1,16 @@
-import type { NextRequest } from "next/server";
-
 import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
+import type { NextRequest } from "next/server";
 
 const log = logger.getSubLogger({ prefix: ["[parseRequestData]"] });
+
+// 512 KB — large enough for any legitimate API call, small enough to limit DoS risk.
+// File uploads go through dedicated multipart handlers that bypass this limit.
+const MAX_JSON_BODY_BYTES = 512 * 1024;
+
+// 10 MB — covers avatar uploads and similar legitimate file payloads while
+// preventing unbounded memory consumption from malicious multipart requests.
+const MAX_MULTIPART_BODY_BYTES = 10 * 1024 * 1024;
 
 export async function parseUrlFormData(req: NextRequest): Promise<Record<string, any>> {
   try {
@@ -18,6 +25,10 @@ export async function parseUrlFormData(req: NextRequest): Promise<Record<string,
 }
 
 export async function parseMultiFormData(req: NextRequest): Promise<Record<string, any>> {
+  const contentLength = Number(req.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_MULTIPART_BODY_BYTES) {
+    throw new HttpError({ statusCode: 413, message: "Request body too large" });
+  }
   try {
     const formData = await req.formData();
     return Object.fromEntries(formData.entries());
@@ -30,9 +41,19 @@ export async function parseMultiFormData(req: NextRequest): Promise<Record<strin
 export async function parseRequestData(req: NextRequest): Promise<Record<string, any>> {
   const contentType = req.headers.get("content-type") ?? "application/json";
   if (contentType.includes("application/json")) {
+    // Guard against oversized payloads that could exhaust memory / stall the event loop.
+    const contentLength = Number(req.headers.get("content-length") ?? 0);
+    if (contentLength > MAX_JSON_BODY_BYTES) {
+      throw new HttpError({ statusCode: 413, message: "Request body too large" });
+    }
     try {
-      return await req.json();
+      const text = await req.text();
+      if (text.length > MAX_JSON_BODY_BYTES) {
+        throw new HttpError({ statusCode: 413, message: "Request body too large" });
+      }
+      return JSON.parse(text);
     } catch (e) {
+      if (e instanceof HttpError) throw e;
       log.error(`Invalid JSON: ${e} from path ${req.nextUrl}`);
       throw new HttpError({ statusCode: 400, message: "Bad Request (Invalid JSON)" });
     }

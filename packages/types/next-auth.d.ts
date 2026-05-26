@@ -78,5 +78,12 @@ declare module "next-auth/jwt" {
     orgAwareUsername?: PrismaUser["username"];
     organizationId?: number | null;
     locale?: string;
+    /**
+     * Unix timestamp (seconds) recording when autoMergeIdentities last ran its DB queries.
+     * Used by the JWT-as-cache mechanism to skip 4 DB queries per request when the merged
+     * identity data is still within its TTL window (default 5 min).
+     * See packages/features/auth/lib/mergeIdentitiesCache.ts.
+     */
+    mergedAt?: number;
   }
 }

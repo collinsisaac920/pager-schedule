@@ -17,8 +17,13 @@ export enum ErrorCode {
   RateLimitExceeded = "rate-limit-exceeded",
   SocialIdentityProviderRequired = "social-identity-provider-required",
   UserAccountLocked = "user-account-locked",
+  // Email / SMS OTP 2FA
   OtpSentToEmail = "otp-sent-to-email",
-  OtpSentToSms = "otp-sent-to-sms",
+  OtpSentToPhone = "otp-sent-to-phone",
   IncorrectOtpCode = "incorrect-otp-code",
   OtpExpired = "otp-expired",
+  SmsTwoFactorNotConfigured = "sms-two-factor-not-configured",
+  // OAuth provider linking
+  ProviderLinkPending = "provider-link-pending",
+  InvalidProviderLink = "invalid-provider-link",
 }

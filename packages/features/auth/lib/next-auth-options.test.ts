@@ -1,3 +1,4 @@
+import process from "node:process";
 import { IdentityProvider, UserPermissionRole } from "@calcom/prisma/enums";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorCode } from "./ErrorCode";
@@ -195,6 +196,14 @@ vi.mock("next-auth/providers/azure-ad", () => ({ default: vi.fn() }));
 vi.mock("next-auth/providers/credentials", () => ({ default: vi.fn(() => ({ id: "credentials" })) }));
 vi.mock("next-auth/providers/email", () => ({ default: vi.fn() }));
 vi.mock("next-auth/providers/google", () => ({ default: vi.fn() }));
+
+// Prevent ProviderLinkConfirmationEmail.sendEmail from hitting prisma.feature.findMany in tests.
+// Must be a regular (non-arrow) function because the code uses `new ProviderLinkConfirmationEmail(...)`.
+vi.mock("@calcom/emails/templates/provider-link-confirmation-email", () => ({
+  default: vi.fn().mockImplementation(function () {
+    return { sendEmail: vi.fn().mockResolvedValue(undefined) };
+  }),
+}));
 
 describe("CredentialsProvider authorize", () => {
   let authorizeCredentials: typeof import("./next-auth-options").authorizeCredentials;
@@ -759,13 +768,13 @@ describe("Azure AD signIn callback", () => {
   });
 
   describe("Azure AD identity provider conversion (signIn callback)", () => {
-    it("CAL user with verified email converts to AZUREAD on Azure AD login", async () => {
-      // No existing user with AZUREAD identity
+    it("CAL user with verified email triggers confirmation email flow (B3 fix)", async () => {
+      // B3: a verified CAL/password account should no longer be silently migrated to
+      // the OAuth provider — the user must confirm via email first.
       mockPrismaUserFindFirst
-        .mockResolvedValueOnce(null) // First call: lookup by identityProvider + providerAccountId
-        .mockResolvedValueOnce(null) // Legacy lookup
+        .mockResolvedValueOnce(null) // lookup by identityProvider + providerAccountId
+        .mockResolvedValueOnce(null) // legacy lookup
         .mockResolvedValueOnce({
-          // Lookup by email
           id: 50,
           email: "user@example.com",
           emailVerified: new Date(),
@@ -782,18 +791,26 @@ describe("Azure AD signIn callback", () => {
         email: undefined,
       } as any);
 
+      // A pending-link token is written; identityProvider is NOT changed immediately.
       expect(mockPrismaUserUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            identityProvider: "AZUREAD",
-            identityProviderId: "azure-conv-1",
+            pendingProviderLinkProvider: "AZUREAD",
+            pendingProviderLinkProviderId: "azure-conv-1",
           }),
         })
       );
-      expect(result).toBe(true);
+      expect(mockPrismaUserUpdate).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ identityProvider: "AZUREAD" }),
+        })
+      );
+      // signIn callback returns the confirmation-pending error redirect, not true.
+      expect(result).toBe("/auth/error?error=provider-link-pending");
     });
 
-    it("GOOGLE user auto-merges on Azure AD login when email is verified", async () => {
+    it("GOOGLE user signing in via Azure AD triggers confirmation email flow (B4a fix)", async () => {
+      // B4a: previously silently re-keyed the Google account to Azure AD.
       mockPrismaUserFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce({
         id: 51,
         email: "user@example.com",
@@ -811,11 +828,17 @@ describe("Azure AD signIn callback", () => {
         email: undefined,
       } as any);
 
-      // With isVerified=true and non-CAL provider, auto-merge path is taken (returns true directly)
-      expect(result).toBe(true);
+      expect(result).toBe("/auth/error?error=provider-link-pending");
+      // Provider must NOT be changed without confirmation.
+      expect(mockPrismaUserUpdate).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ identityProvider: "AZUREAD" }),
+        })
+      );
     });
 
-    it("AZUREAD user auto-merges on Google login when email is verified", async () => {
+    it("AZUREAD user signing in via Google triggers confirmation email flow (B4b fix)", async () => {
+      // B4b: symmetric path — Azure AD account should not be silently re-keyed to Google.
       mockPrismaUserFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce({
         id: 52,
         email: "user@example.com",
@@ -833,8 +856,12 @@ describe("Azure AD signIn callback", () => {
         email: undefined,
       } as any);
 
-      // With isVerified=true and non-CAL provider, auto-merge path is taken (returns true directly)
-      expect(result).toBe(true);
+      expect(result).toBe("/auth/error?error=provider-link-pending");
+      expect(mockPrismaUserUpdate).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ identityProvider: "GOOGLE" }),
+        })
+      );
     });
 
     it("unverified CAL account blocks Azure AD linking (anti-hijack)", async () => {
@@ -1285,5 +1312,250 @@ describe("Azure AD JWT callback", () => {
         })
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Account lockout integration — authorizeCredentials
+// ---------------------------------------------------------------------------
+
+describe("Account lockout — authorizeCredentials", () => {
+  let authorizeCredentials: typeof import("./next-auth-options").authorizeCredentials;
+  let verifyPassword: any;
+  let prismaUserUpdate: ReturnType<typeof vi.fn>;
+
+  const createMockUser = (overrides: Partial<any> = {}) => ({
+    id: 1,
+    email: "test@example.com",
+    name: "Test User",
+    username: "testuser",
+    role: "USER",
+    locked: false,
+    lockUntil: null,
+    failedLoginAttempts: 0,
+    lastFailedLoginAt: null,
+    identityProvider: "CAL",
+    twoFactorEnabled: false,
+    twoFactorSecret: null,
+    backupCodes: null,
+    password: { hash: "$2a$10$hashedpassword" },
+    allProfiles: [{ id: 1, upId: "usr_1", username: "testuser" }],
+    teams: [],
+    ...overrides,
+  });
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockFindByEmailAndIncludeProfilesAndPassword.mockReset();
+
+    const verifyPasswordModule = await import("./verifyPassword");
+    verifyPassword = verifyPasswordModule.verifyPassword;
+
+    const authModule = await import("./next-auth-options");
+    authorizeCredentials = authModule.authorizeCredentials;
+
+    // Grab the prisma mock update fn so we can assert on it
+    const prismaModule = await import("@calcom/prisma");
+    prismaUserUpdate = (prismaModule as any).default.user.update;
+    prismaUserUpdate.mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // ── Hard-locked account ──────────────────────────────────────────────────
+
+  it("rejects a permanently locked user before verifying password", async () => {
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(createMockUser({ locked: true }));
+
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "pass" } as any)
+    ).rejects.toThrow("user-account-locked");
+
+    expect(verifyPassword).not.toHaveBeenCalled();
+  });
+
+  // ── Soft-locked account ──────────────────────────────────────────────────
+
+  it("rejects a user whose lockUntil is in the future (soft lock active)", async () => {
+    const future = new Date(Date.now() + 15 * 60 * 1000);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(createMockUser({ lockUntil: future }));
+
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "pass" } as any)
+    ).rejects.toThrow("user-account-locked");
+
+    expect(verifyPassword).not.toHaveBeenCalled();
+  });
+
+  it("allows login when lockUntil is in the past (soft lock expired)", async () => {
+    const past = new Date(Date.now() - 1000);
+    vi.mocked(verifyPassword).mockResolvedValue(true);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(createMockUser({ lockUntil: past }));
+
+    // Should not throw — lock expired
+    const result = await authorizeCredentials({
+      email: "test@example.com",
+      password: "pass",
+      totpCode: "",
+      backupCode: "",
+    } as any);
+
+    expect(result).not.toBeNull();
+  });
+
+  // ── Escalating lockout on password failures ──────────────────────────────
+
+  it("does not lock at 4 failures (below soft threshold)", async () => {
+    vi.mocked(verifyPassword).mockResolvedValue(false);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({ failedLoginAttempts: 3 }) // will become 4
+    );
+
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "wrong" } as any)
+    ).rejects.toThrow("incorrect-email-password");
+
+    expect(prismaUserUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ locked: true }),
+      })
+    );
+    // lockUntil should not be set below threshold
+    const callData = prismaUserUpdate.mock.calls[0][0].data;
+    expect(callData.lockUntil).toBeUndefined();
+  });
+
+  it("applies soft lock (15 min) at failure count 5", async () => {
+    vi.useFakeTimers();
+    const NOW = 1_700_000_000_000;
+    vi.setSystemTime(NOW);
+
+    vi.mocked(verifyPassword).mockResolvedValue(false);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({ failedLoginAttempts: 4 }) // will become 5
+    );
+
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "wrong" } as any)
+    ).rejects.toThrow("incorrect-email-password");
+
+    const callData = prismaUserUpdate.mock.calls[0][0].data;
+    expect(callData.locked).toBeUndefined();
+    expect(callData.lockUntil).toBeInstanceOf(Date);
+    expect(callData.lockUntil.getTime()).toBe(NOW + 15 * 60 * 1000);
+  });
+
+  it("applies medium lock (1 hr) at failure count 7", async () => {
+    vi.useFakeTimers();
+    const NOW = 1_700_000_000_000;
+    vi.setSystemTime(NOW);
+
+    vi.mocked(verifyPassword).mockResolvedValue(false);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({ failedLoginAttempts: 6 }) // will become 7
+    );
+
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "wrong" } as any)
+    ).rejects.toThrow("incorrect-email-password");
+
+    const callData = prismaUserUpdate.mock.calls[0][0].data;
+    expect(callData.locked).toBeUndefined();
+    expect(callData.lockUntil.getTime()).toBe(NOW + 60 * 60 * 1000);
+  });
+
+  it("applies hard lock (permanent) at failure count 10", async () => {
+    vi.mocked(verifyPassword).mockResolvedValue(false);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({ failedLoginAttempts: 9 }) // will become 10
+    );
+
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "wrong" } as any)
+    ).rejects.toThrow("incorrect-email-password");
+
+    const callData = prismaUserUpdate.mock.calls[0][0].data;
+    expect(callData.locked).toBe(true);
+    expect(callData.lockUntil).toBeNull();
+  });
+
+  // ── Counter reset on success ─────────────────────────────────────────────
+
+  it("resets failedLoginAttempts and lockUntil to null on successful login", async () => {
+    vi.mocked(verifyPassword).mockResolvedValue(true);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({ failedLoginAttempts: 3, lockUntil: new Date(Date.now() - 1000) })
+    );
+
+    await authorizeCredentials({
+      email: "test@example.com",
+      password: "correct",
+      totpCode: "",
+      backupCode: "",
+    } as any);
+
+    expect(prismaUserUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          failedLoginAttempts: 0,
+          lastFailedLoginAt: null,
+          lockUntil: null,
+        }),
+      })
+    );
+  });
+
+  // ── Same error for locked and wrong password (enumeration prevention) ────
+
+  it("uses distinct error codes for locked vs wrong password — both are opaque to the attacker", async () => {
+    // soft-locked
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({ lockUntil: new Date(Date.now() + 60_000) })
+    );
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "pass" } as any)
+    ).rejects.toThrow("user-account-locked");
+
+    // wrong password
+    vi.mocked(verifyPassword).mockResolvedValue(false);
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(createMockUser());
+    await expect(
+      authorizeCredentials({ email: "test@example.com", password: "wrong" } as any)
+    ).rejects.toThrow("incorrect-email-password");
+  });
+
+  // ── Backup-code failures share the same lockout budget ───────────────────
+
+  it("increments lockout counter on incorrect backup code after correct password", async () => {
+    vi.mocked(verifyPassword).mockResolvedValue(true);
+
+    const { symmetricDecrypt } = await import("@calcom/lib/crypto");
+    vi.mocked(symmetricDecrypt).mockReturnValue(
+      JSON.stringify({ version: 2, codes: Array(10).fill("a".repeat(64)) })
+    );
+
+    mockFindByEmailAndIncludeProfilesAndPassword.mockResolvedValue(
+      createMockUser({
+        twoFactorEnabled: true,
+        backupCodes: "encrypted",
+        failedLoginAttempts: 9, // one away from hard lock
+      })
+    );
+
+    await expect(
+      authorizeCredentials({
+        email: "test@example.com",
+        password: "correct",
+        backupCode: "wrongcode",
+      } as any)
+    ).rejects.toThrow("incorrect-backup-code");
+
+    // The second update call (after password reset) should contain the new count and hard lock
+    const updateCalls = prismaUserUpdate.mock.calls;
+    const lockoutCall = updateCalls.find((c: any[]) => c[0].data.failedLoginAttempts === 10);
+    expect(lockoutCall).toBeDefined();
+    expect(lockoutCall[0].data.locked).toBe(true);
   });
 });

@@ -45,6 +45,24 @@ export function isIpInBanlist(request: Request | NextApiRequest) {
   return false;
 }
 
+/**
+ * Extracts the real client IP from a plain header record (e.g. NextAuth RequestInternal.headers).
+ * Uses the same priority order as getIP() so behaviour is consistent.
+ */
+export function getIpFromHeaderRecord(headers: Record<string, unknown>): string {
+  const priority = ["cf-connecting-ip", "true-client-ip", "x-forwarded-for", "x-real-ip"] as const;
+  for (const name of priority) {
+    const value = headers[name];
+    if (typeof value === "string" && value.trim()) {
+      return parseIpFromHeaders(value);
+    }
+    if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
+      return parseIpFromHeaders(value[0]);
+    }
+  }
+  return "127.0.0.1";
+}
+
 export function isIpInBanListString(identifer: string) {
   const rawBanListJson = process.env.IP_BANLIST || "[]";
   const banList = banlistSchema.parse(JSON.parse(rawBanListJson));

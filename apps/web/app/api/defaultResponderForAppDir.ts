@@ -1,14 +1,13 @@
+import process from "node:process";
+import { HttpError } from "@calcom/lib/http-error";
+import { getServerErrorFromUnknown } from "@calcom/lib/server/getServerErrorFromUnknown";
+import { performance } from "@calcom/lib/server/perfObserver";
+import { TRPCError } from "@trpc/server";
+import { getHTTPStatusCodeFromError } from "@trpc/server/http";
 import type { Params } from "app/_types";
 import { ApiError } from "next/dist/server/api-utils";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-import { HttpError } from "@calcom/lib/http-error";
-import { getServerErrorFromUnknown } from "@calcom/lib/server/getServerErrorFromUnknown";
-import { performance } from "@calcom/lib/server/perfObserver";
-
-import { TRPCError } from "@trpc/server";
-import { getHTTPStatusCodeFromError } from "@trpc/server/http";
 
 type Handler<T extends NextResponse | Response = NextResponse> = (
   req: NextRequest,
@@ -61,16 +60,9 @@ export const defaultResponderForAppDir = <T extends NextResponse | Response = Ne
         captureException(error);
       }
 
-      return NextResponse.json(
-        {
-          message: serverError.message,
-          url: serverError.url,
-          method: serverError.method,
-        },
-        {
-          status: serverError.statusCode,
-        }
-      );
+      // Never reflect url/method back to the client — they can be used to
+      // fingerprint internal routing or leak path parameters in error bodies.
+      return NextResponse.json({ message: serverError.message }, { status: serverError.statusCode });
     } finally {
       performance.mark("End");
       performance.measure(`[${ok ? "OK" : "ERROR"}][${req.method}] '${req.url}'`, "Start", "End");

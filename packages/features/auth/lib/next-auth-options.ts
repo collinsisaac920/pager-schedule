@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import process from "node:process";
 import { updateProfilePhotoGoogle } from "@calcom/app-store/_utils/oauth/updateProfilePhotoGoogle";
 import { updateProfilePhotoMicrosoft } from "@calcom/app-store/_utils/oauth/updateProfilePhotoMicrosoft";
@@ -27,12 +28,17 @@ import {
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
 import { isENVDev } from "@calcom/lib/env";
+import { generateAndStoreOTP, verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
+import { getEncryptionKey } from "@calcom/lib/getEncryptionKey";
+import { getIpFromHeaderRecord } from "@calcom/lib/getIP";
 import logger from "@calcom/lib/logger";
+import { checkOtpSendRateLimit } from "@calcom/lib/otpRateLimit";
 import { randomString } from "@calcom/lib/random";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { hashEmail } from "@calcom/lib/server/PiiHasher";
 import slugify from "@calcom/lib/slugify";
 import type { TrackingData } from "@calcom/lib/tracking";
+import { sendSmsOTP, verifySmsOTP } from "@calcom/lib/twilioVerify";
 import prisma from "@calcom/prisma";
 import type { Membership, Team } from "@calcom/prisma/client";
 import { CreationSource, IdentityProvider, MembershipRole, UserPermissionRole } from "@calcom/prisma/enums";
@@ -50,12 +56,18 @@ import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
 import type { Provider } from "next-auth/providers/index";
 import { getOrgUsernameFromEmail } from "../signup/utils/getOrgUsernameFromEmail";
+import { computeLockData, isSoftLocked } from "./accountLockout";
+import {
+  consumeBackupCode,
+  findBackupCode,
+  parseBackupCodeStorage,
+  serializeBackupCodeStorage,
+} from "./backupCodeVerifier";
 import { dub } from "./dub";
 import { ErrorCode } from "./ErrorCode";
+import { isMergeCacheFresh, stampMergeResult } from "./mergeIdentitiesCache";
 import CalComAdapter from "./next-auth-custom-adapter";
 import { verifyPassword } from "./verifyPassword";
-import { generateAndStoreOTP, sendOtpEmail, verifyAndConsumeOTP } from "@calcom/lib/generateLoginOTP";
-import { isTwilioConfigured, sendSmsOtp } from "@calcom/lib/twilioSms";
 
 type UserWithProfiles = NonNullable<
   Awaited<ReturnType<UserRepository["findByEmailAndIncludeProfilesAndPassword"]>>
@@ -147,17 +159,65 @@ const checkIfUserShouldBelongToOrg = async (idP: IdentityProvider, email: string
 };
 
 /**
+ * Stores a 24-hour pending-link token for a cross-provider identity change,
+ * sends a confirmation email to the account's existing address, and returns
+ * the redirect URL that the signIn callback should return.
+ *
+ * The actual provider update only happens when the user clicks the link.
+ * This prevents silent account takeover via a verified-but-different provider.
+ */
+async function redirectToProviderLinkConfirmation(
+  existingUser: { id: number; email: string },
+  newProvider: IdentityProvider,
+  newProviderId: string
+): Promise<string> {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.user.update({
+    where: { id: existingUser.id },
+    data: {
+      pendingProviderLinkToken: token,
+      pendingProviderLinkExpiry: expiry,
+      pendingProviderLinkProvider: newProvider,
+      pendingProviderLinkProviderId: newProviderId,
+    },
+  });
+
+  const confirmUrl = `${WEBAPP_URL}/api/auth/link-provider/confirm?token=${token}`;
+  const { default: ProviderLinkConfirmationEmail } = await import(
+    "@calcom/emails/templates/provider-link-confirmation-email"
+  );
+  await new ProviderLinkConfirmationEmail({
+    to: existingUser.email,
+    confirmUrl,
+    newProvider,
+  }).sendEmail();
+
+  log.info("Provider link confirmation email sent", {
+    userId: existingUser.id,
+    newProvider,
+  });
+
+  // Redirect to an informational page — no session is issued until confirmed.
+  return `/auth/error?error=provider-link-pending`;
+}
+
+/**
  * Authorize function for credentials provider
  * Extracted for testability
  */
 export async function authorizeCredentials(
-  credentials: Record<"email" | "password" | "totpCode" | "backupCode", string> | undefined
+  credentials: Record<"email" | "password" | "totpCode" | "backupCode", string> | undefined,
+  req?: { headers?: Record<string, unknown> }
 ): Promise<User | null> {
   log.debug("CredentialsProvider:credentials:authorize", safeStringify({ credentials }));
   if (!credentials) {
     console.error(`For some reason credentials are missing`);
     throw new Error(ErrorCode.InternalServerError);
   }
+
+  const ip = getIpFromHeaderRecord(req?.headers ?? {});
 
   const userRepo = new UserRepository(prisma);
   const user = await userRepo.findByEmailAndIncludeProfilesAndPassword({
@@ -168,8 +228,9 @@ export async function authorizeCredentials(
     throw new Error(ErrorCode.IncorrectEmailPassword);
   }
 
-  // Locked users cannot login
-  if (user.locked) {
+  // Permanently locked (admin must clear) or under an active soft-lock window.
+  // Both produce the same error to prevent account-enumeration via error message.
+  if (user.locked || isSoftLocked(user.lockUntil)) {
     throw new Error(ErrorCode.UserAccountLocked);
   }
 
@@ -185,64 +246,113 @@ export async function authorizeCredentials(
   // Always verify password for users who have one
   const isCorrectPassword = await verifyPassword(credentials.password, user.password.hash);
   if (!isCorrectPassword) {
+    const newCount = (user.failedLoginAttempts ?? 0) + 1;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: newCount,
+        lastFailedLoginAt: new Date(),
+        ...computeLockData(newCount),
+      },
+    });
     throw new Error(ErrorCode.IncorrectEmailPassword);
   }
 
+  // Reset counter and any soft lock on successful password verification.
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { failedLoginAttempts: 0, lastFailedLoginAt: null, lockUntil: null },
+  });
+
   if (user.twoFactorEnabled && credentials.backupCode) {
-    if (!process.env.CALENDSO_ENCRYPTION_KEY) {
-      console.error("Missing encryption key; cannot proceed with backup code login.");
+    if (!user.backupCodes) throw new Error(ErrorCode.MissingBackupCodes);
+
+    const encKey = getEncryptionKey();
+    const storage = parseBackupCodeStorage(symmetricDecrypt(user.backupCodes, encKey));
+
+    // Constant-time scan across every slot. findBackupCode never short-circuits on a
+    // match or a null slot, eliminating position-based and null-count timing oracles.
+    const matchIndex = findBackupCode(storage, credentials.backupCode);
+
+    if (matchIndex === -1) {
+      // Count backup-code failures toward the same lockout counter as password failures.
+      // This prevents an attacker from brute-forcing backup codes after already passing
+      // the password check — both factor failures share a single lockout budget.
+      const newCount = (user.failedLoginAttempts ?? 0) + 1;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newCount,
+          lastFailedLoginAt: new Date(),
+          ...computeLockData(newCount),
+        },
+      });
+      throw new Error(ErrorCode.IncorrectBackupCode);
+    }
+
+    // Consume the matched slot and re-encrypt. Atomic: the slot is nulled before the
+    // response is sent so a concurrent duplicate request finds no valid code.
+    const updatedStorage = consumeBackupCode(storage, matchIndex);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { backupCodes: symmetricEncrypt(serializeBackupCodeStorage(updatedStorage), encKey) },
+    });
+  } else if (user.twoFactorEnabled && user.twoFactorMethod === "EMAIL") {
+    // ── Email OTP 2FA ────────────────────────────────────────────────────────
+    if (!credentials.totpCode) {
+      await checkOtpSendRateLimit({ userId: user.id, email: user.email, ip, channel: "email" });
+      const otp = await generateAndStoreOTP(user.id);
+      const { default: TwoFactorOtpEmail } = await import("@calcom/emails/templates/two-factor-otp-email");
+      await new TwoFactorOtpEmail({ to: user.email, otp, expiryMinutes: 10 }).sendEmail();
+      throw new Error(ErrorCode.OtpSentToEmail);
+    }
+
+    const isValid = await verifyAndConsumeOTP(user.id, credentials.totpCode);
+    if (!isValid) {
+      throw new Error(ErrorCode.IncorrectOtpCode);
+    }
+  } else if (user.twoFactorEnabled && user.twoFactorMethod === "SMS") {
+    // ── SMS OTP 2FA (Twilio Verify) ──────────────────────────────────────────
+    if (!user.phoneForTwoFactor) {
+      console.error(`SMS 2FA enabled for user ${user.id} but no phone number stored`);
+      throw new Error(ErrorCode.SmsTwoFactorNotConfigured);
+    }
+
+    if (!credentials.totpCode) {
+      await checkOtpSendRateLimit({ userId: user.id, email: user.email, ip, channel: "sms" });
+      await sendSmsOTP(user.phoneForTwoFactor);
+      throw new Error(ErrorCode.OtpSentToPhone);
+    }
+
+    const isValid = await verifySmsOTP(user.phoneForTwoFactor, credentials.totpCode);
+    if (!isValid) {
+      throw new Error(ErrorCode.IncorrectOtpCode);
+    }
+  } else if (user.twoFactorEnabled) {
+    // ── TOTP (authenticator app) — existing behaviour ────────────────────────
+    if (!credentials.totpCode) {
+      throw new Error(ErrorCode.SecondFactorRequired);
+    }
+
+    if (!user.twoFactorSecret) {
+      console.error(`Two factor is enabled for user ${user.id} but they have no secret`);
       throw new Error(ErrorCode.InternalServerError);
     }
 
-    if (!user.backupCodes) throw new Error(ErrorCode.MissingBackupCodes);
+    const secret = symmetricDecrypt(user.twoFactorSecret, getEncryptionKey());
+    if (secret.length !== 32) {
+      console.error(
+        `Two factor secret decryption failed. Expected key with length 32 but got ${secret.length}`
+      );
+      throw new Error(ErrorCode.InternalServerError);
+    }
 
-    const backupCodes = JSON.parse(symmetricDecrypt(user.backupCodes, process.env.CALENDSO_ENCRYPTION_KEY));
-
-    // check if user-supplied code matches one
-    const index = backupCodes.indexOf(credentials.backupCode.replaceAll("-", ""));
-    if (index === -1) throw new Error(ErrorCode.IncorrectBackupCode);
-
-    // delete verified backup code and re-encrypt remaining
-    backupCodes[index] = null;
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        backupCodes: symmetricEncrypt(JSON.stringify(backupCodes), process.env.CALENDSO_ENCRYPTION_KEY),
-      },
-    });
-  } else if (user.twoFactorEnabled) {
-    const method = (user as { twoFactorMethod?: string | null }).twoFactorMethod ?? "EMAIL";
-    const phone = (user as { phoneForTwoFactor?: string | null }).phoneForTwoFactor;
-
-    if (method === "SMS") {
-      if (credentials.totpCode) {
-        const valid = await verifyAndConsumeOTP(user.id, credentials.totpCode);
-        if (!valid) throw new Error(ErrorCode.IncorrectOtpCode);
-      } else {
-        if (!phone) {
-          console.error(`SMS 2FA enabled for user ${user.id} but no phone number stored`);
-          throw new Error(ErrorCode.InternalServerError);
-        }
-        if (!isTwilioConfigured()) {
-          console.error("SMS 2FA requested but Twilio is not configured");
-          throw new Error(ErrorCode.InternalServerError);
-        }
-        const otp = await generateAndStoreOTP(user.id);
-        await sendSmsOtp(phone, otp);
-        throw new Error(ErrorCode.OtpSentToSms);
-      }
-    } else {
-      // EMAIL method (default)
-      if (credentials.totpCode) {
-        const valid = await verifyAndConsumeOTP(user.id, credentials.totpCode);
-        if (!valid) throw new Error(ErrorCode.IncorrectOtpCode);
-      } else {
-        const otp = await generateAndStoreOTP(user.id);
-        await sendOtpEmail(user.email, otp);
-        throw new Error(ErrorCode.OtpSentToEmail);
-      }
+    const isValidToken = (await import("@calcom/lib/totp")).totpAuthenticatorCheck(
+      credentials.totpCode,
+      secret
+    );
+    if (!isValidToken) {
+      throw new Error(ErrorCode.IncorrectTwoFactorCode);
     }
   }
   // Check if the user you are logging into has any active teams
@@ -255,7 +365,9 @@ export async function authorizeCredentials(
     // User's identity provider is not "CAL"
     if (user.identityProvider !== IdentityProvider.CAL) return role;
 
-    if (process.env.NEXT_PUBLIC_IS_E2E) {
+    // E2E bypass is only permitted in non-production environments to prevent
+    // test credentials from granting admin access on the live platform.
+    if (process.env.NEXT_PUBLIC_IS_E2E && process.env.NODE_ENV !== "production") {
       console.warn("E2E testing is enabled, skipping password and 2FA requirements for Admin");
       return role;
     }
@@ -322,7 +434,8 @@ if (IS_GOOGLE_LOGIN_ENABLED) {
     GoogleProvider({
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
+      // allowDangerousEmailAccountLinking intentionally omitted — the signIn
+      // callback owns all cross-provider linking decisions explicitly.
       authorization: {
         params: {
           scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
@@ -339,7 +452,8 @@ if (OUTLOOK_LOGIN_ENABLED && OUTLOOK_CLIENT_ID && OUTLOOK_CLIENT_SECRET) {
     AzureADProvider({
       clientId: OUTLOOK_CLIENT_ID,
       clientSecret: OUTLOOK_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
+      // allowDangerousEmailAccountLinking intentionally omitted — the signIn
+      // callback owns all cross-provider linking decisions explicitly.
       authorization: {
         params: {
           scope: ["openid", "profile", "email", ...MICROSOFT_CALENDAR_SCOPES].join(" "),
@@ -393,18 +507,10 @@ export const getOptions = ({
     // Impl. detail: We don't pass through as this function is called with encode/decode functions.
     encode: async ({ token, maxAge, secret }) => {
       log.debug("jwt:encode", safeStringify({ token, maxAge }));
-      if (token?.sub && isNumber(token.sub)) {
-        const user = await prisma.user.findFirst({
-          where: { id: Number(token.sub) },
-          select: { metadata: true },
-        });
-        // if no user is found, we still don't want to crash here.
-        if (user) {
-          const metadata = userMetadata.parse(user.metadata);
-          if (metadata?.sessionTimeout) {
-            maxAge = metadata.sessionTimeout * 60;
-          }
-        }
+      // Read sessionTimeout from the token rather than querying the DB on every
+      // encode call — the jwt callback stores it at sign-in time.
+      if (typeof token?.sessionTimeout === "number") {
+        maxAge = token.sessionTimeout * 60;
       }
       return encode({ secret, token, maxAge });
     },
@@ -445,6 +551,18 @@ export const getOptions = ({
         } as JWT;
       }
       const autoMergeIdentities = async () => {
+        // ── Cache check ────────────────────────────────────────────────────────
+        // The JWT already carries the merged identity state from the previous call.
+        // Skip all 4 DB queries until the stamp expires (default 5 min).
+        // Security-sensitive admin actions (lock, org removal) must force a sign-out
+        // rather than relying on TTL expiry for immediate propagation.
+        if (isMergeCacheFresh(token)) {
+          log.debug("callbacks:jwt:autoMergeIdentities - cache hit", {
+            mergedAt: token.mergedAt,
+          });
+          return token;
+        }
+
         const existingUser = await prisma.user.findFirst({
           where: { email: token.email! },
           select: {
@@ -505,7 +623,7 @@ export const getOptions = ({
           orgRole = membership?.role;
         }
 
-        return {
+        return stampMergeResult({
           ...existingUserWithoutTeamsField,
           ...token,
           profileId: profile.id,
@@ -527,7 +645,7 @@ export const getOptions = ({
                   role: orgRole as MembershipRole, // It can't be undefined if we have a profileOrg
                 }
               : null,
-        } as JWT;
+        }) as JWT;
       };
       if (!user) {
         return await autoMergeIdentities();
@@ -549,6 +667,9 @@ export const getOptions = ({
           return updatedToken;
         }
         // any other credentials, add user info
+        const credUserMetadata = userMetadata.safeParse(
+          (user as unknown as Record<string, unknown>).metadata
+        );
         return {
           ...token,
           id: user.id,
@@ -564,6 +685,8 @@ export const getOptions = ({
           profileId: user.profile?.id ?? token.profileId ?? null,
           upId: user.profile?.upId ?? token.upId ?? null,
           inactiveAdminReason: user.inactiveAdminReason,
+          // Cache sessionTimeout in the token to avoid a DB lookup on every encode call.
+          sessionTimeout: credUserMetadata.success ? credUserMetadata.data?.sessionTimeout : undefined,
         } as JWT;
       }
 
@@ -577,10 +700,15 @@ export const getOptions = ({
         const idP = getIdentityProvider(account.provider);
 
         if (!idP) {
-          log.warn("callbacks:jwt:accountType:oauth - unknown provider, falling back to auto-merge", {
+          // Unknown provider — return the existing token unchanged rather than
+          // falling through to an email-based merge. The signIn callback already
+          // rejects unknown providers; reaching this branch would indicate a
+          // provider registered in NextAuth but not in getIdentityProvider().
+          // Silently merging would give the unknown provider unintended trust.
+          log.warn("callbacks:jwt:accountType:oauth - unknown provider, returning existing token", {
             provider: account.provider,
           });
-          return await autoMergeIdentities();
+          return token;
         }
 
         const existingUser = await prisma.user.findFirst({
@@ -894,8 +1022,13 @@ export const getOptions = ({
           },
         });
 
-        /* --- START FIX LEGACY ISSUE WHERE 'identityProviderId' was accidentally set to userId --- */
-        if (!existingUser) {
+        /* --- LEGACY REPAIR: identityProviderId was accidentally set to userId ---
+         * Disable once all affected rows have been backfilled by setting:
+         *   DISABLE_LEGACY_PROVIDER_ID_REPAIR=true
+         * Run a one-time migration to clean up remaining rows before disabling:
+         *   UPDATE users SET "identityProviderId" = ...  (via a data migration script)
+         */
+        if (!existingUser && process.env.DISABLE_LEGACY_PROVIDER_ID_REPAIR !== "true") {
           existingUser = await prisma.user.findFirst({
             include: {
               password: {
@@ -915,6 +1048,10 @@ export const getOptions = ({
             },
           });
           if (existingUser) {
+            log.info("Legacy identityProviderId repair triggered", {
+              userId: existingUser.id,
+              provider: idP,
+            });
             await prisma.user.update({
               where: {
                 id: existingUser?.id,
@@ -925,7 +1062,7 @@ export const getOptions = ({
             });
           }
         }
-        /* --- END FIXES LEGACY ISSUE WHERE 'identityProviderId' was accidentally set to userId --- */
+        /* --- END LEGACY REPAIR --- */
         if (existingUser) {
           // In this case there's an existing user and their email address
           // hasn't changed since they last logged in.
@@ -992,13 +1129,11 @@ export const getOptions = ({
         });
 
         if (existingUserWithEmail) {
-          // if self-hosted then we can allow auto-merge of identity providers if email is verified
+          // B1 — Email matches an existing non-CAL account but provider/id differ.
+          // Previously this silently let the new provider in (account takeover risk).
+          // Now we require the existing account holder to confirm via email.
           if (isVerified && existingUserWithEmail.identityProvider !== IdentityProvider.CAL) {
-            if (existingUserWithEmail.twoFactorEnabled) {
-              return loginWithTotp(existingUserWithEmail.email);
-            } else {
-              return true;
-            }
+            return redirectToProviderLinkConfirmation(existingUserWithEmail, idP, account.providerAccountId);
           }
 
           // check if user was invited
@@ -1031,32 +1166,21 @@ export const getOptions = ({
             }
           }
 
-          // User signs up with email/password and then tries to login with Google/SAML/AzureAD using the same email
+          // B3 — Password (CAL) account exists; user is trying to sign in via OAuth.
+          // Previously this silently migrated the account to the OAuth provider.
+          // A compromised OAuth account for the same email could take over a
+          // password account without the password owner's knowledge.
+          // Now we require email confirmation before the migration is committed.
           if (
             existingUserWithEmail.identityProvider === IdentityProvider.CAL &&
             (idP === IdentityProvider.GOOGLE ||
               idP === IdentityProvider.SAML ||
               idP === IdentityProvider.AZUREAD)
           ) {
-            // Prevent account pre-hijacking: block OAuth linking for unverified accounts
             if (!existingUserWithEmail.emailVerified) {
               return "/auth/error?error=unverified-email";
             }
-
-            await prisma.user.update({
-              where: { email: existingUserWithEmail.email },
-              data: {
-                email: user.email.toLowerCase(),
-                identityProvider: idP,
-                identityProviderId: account.providerAccountId,
-              },
-            });
-
-            if (existingUserWithEmail.twoFactorEnabled) {
-              return loginWithTotp(existingUserWithEmail.email);
-            } else {
-              return true;
-            }
+            return redirectToProviderLinkConfirmation(existingUserWithEmail, idP, account.providerAccountId);
           } else if (existingUserWithEmail.identityProvider === IdentityProvider.CAL) {
             log.error(`Userid ${user.id} already exists with CAL identity provider`);
             return `/auth/error?error=wrong-provider&provider=${existingUserWithEmail.identityProvider}`;
@@ -1064,38 +1188,17 @@ export const getOptions = ({
             existingUserWithEmail.identityProvider === IdentityProvider.GOOGLE &&
             idP === IdentityProvider.AZUREAD
           ) {
-            await prisma.user.update({
-              where: { email: existingUserWithEmail.email },
-              data: {
-                email: user.email.toLowerCase(),
-                identityProvider: idP,
-                identityProviderId: account.providerAccountId,
-              },
-            });
-
-            if (existingUserWithEmail.twoFactorEnabled) {
-              return loginWithTotp(existingUserWithEmail.email);
-            } else {
-              return true;
-            }
+            // B4a — Google account exists; user is trying to sign in via Azure AD.
+            // Previously this silently re-keyed the account to Azure AD — an
+            // attacker with access to the same email in any Azure AD tenant could
+            // permanently take over a Google-linked account with no user consent.
+            return redirectToProviderLinkConfirmation(existingUserWithEmail, idP, account.providerAccountId);
           } else if (
             existingUserWithEmail.identityProvider === IdentityProvider.AZUREAD &&
             idP === IdentityProvider.GOOGLE
           ) {
-            await prisma.user.update({
-              where: { email: existingUserWithEmail.email },
-              data: {
-                email: user.email.toLowerCase(),
-                identityProvider: idP,
-                identityProviderId: account.providerAccountId,
-              },
-            });
-
-            if (existingUserWithEmail.twoFactorEnabled) {
-              return loginWithTotp(existingUserWithEmail.email);
-            } else {
-              return true;
-            }
+            // B4b — Symmetric path: Azure AD account exists; user signing in via Google.
+            return redirectToProviderLinkConfirmation(existingUserWithEmail, idP, account.providerAccountId);
           }
           log.error(`Userid ${user.id} trying to login with the wrong provider`, {
             userId: user.id,
