@@ -1,15 +1,12 @@
-import { v4 } from "uuid";
-
 import { updateTriggerForExistingBookings } from "@calcom/features/webhooks/lib/scheduleTrigger";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { validateUrlForSSRFSync } from "@calcom/lib/ssrfProtection";
 import { prisma } from "@calcom/prisma";
-import type { Webhook } from "@calcom/prisma/client";
-import type { Prisma } from "@calcom/prisma/client";
+import type { Prisma, Webhook } from "@calcom/prisma/client";
 import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
-
 import { TRPCError } from "@trpc/server";
-
+import { v4 } from "uuid";
 import type { TCreateInputSchema } from "./create.schema";
 
 type CreateOptions = {
@@ -77,6 +74,16 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   }
 
   await updateTriggerForExistingBookings(newWebhook, [], newWebhook.eventTriggers);
+
+  if (input.teamId) {
+    await logAuditEvent({
+      teamId: input.teamId,
+      actorId: user.id,
+      action: "WEBHOOK_CREATED",
+      resource: `webhook:${newWebhook.id}`,
+      metadata: { subscriberUrl: input.subscriberUrl, eventTriggers: input.eventTriggers },
+    });
+  }
 
   return newWebhook;
 };

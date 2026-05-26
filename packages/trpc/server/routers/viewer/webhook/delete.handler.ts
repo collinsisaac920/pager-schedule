@@ -1,8 +1,8 @@
 import { updateTriggerForExistingBookings } from "@calcom/features/webhooks/lib/scheduleTrigger";
+import { logAuditEvent } from "@calcom/lib/auditLog";
 import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
-
 import type { TDeleteInputSchema } from "./delete.schema";
 
 type DeleteOptions = {
@@ -39,6 +39,16 @@ export const deleteHandler = async ({ ctx, input }: DeleteOptions) => {
     });
 
     await updateTriggerForExistingBookings(webhookToDelete, webhookToDelete.eventTriggers, []);
+
+    if (webhookToDelete.teamId) {
+      await logAuditEvent({
+        teamId: webhookToDelete.teamId,
+        actorId: ctx.user.id,
+        action: "WEBHOOK_DELETED",
+        resource: `webhook:${webhookToDelete.id}`,
+        metadata: { subscriberUrl: webhookToDelete.subscriberUrl },
+      });
+    }
   }
 
   return {

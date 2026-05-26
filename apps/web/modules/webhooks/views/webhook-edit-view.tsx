@@ -9,6 +9,7 @@ import { trpc } from "@calcom/trpc/react";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { toastManager } from "@coss/ui/components/toast";
 import { useRouter } from "next/navigation";
+import WebhookDeliveryHistory from "../components/WebhookDeliveryHistory";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
 import { WebhookVersionCTA } from "../components/WebhookVersionCTA";
@@ -57,53 +58,61 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
   if (isPending || !webhook) return <WebhookFormSkeleton titleKey="edit_webhook" />;
 
   return (
-    <WebhookForm
-      webhook={webhook}
-      headerWrapper={(formMethods, children) => (
-        <>
-          <WebhookFormHeader titleKey="edit_webhook" CTA={<WebhookVersionCTA formMethods={formMethods} />} />
-          {children}
-        </>
-      )}
-      onSubmit={(values: WebhookFormSubmitData) => {
-        if (
-          subscriberUrlReserved({
-            subscriberUrl: values.subscriberUrl,
+    <>
+      <WebhookForm
+        webhook={webhook}
+        headerWrapper={(formMethods, children) => (
+          <>
+            <WebhookFormHeader
+              titleKey="edit_webhook"
+              CTA={<WebhookVersionCTA formMethods={formMethods} />}
+            />
+            {children}
+          </>
+        )}
+        onSubmit={(values: WebhookFormSubmitData) => {
+          if (
+            subscriberUrlReserved({
+              subscriberUrl: values.subscriberUrl,
+              id: webhook.id,
+              webhooks,
+              teamId: webhook.teamId ?? undefined,
+              userId: webhook.userId ?? undefined,
+              platform: webhook.platform ?? undefined,
+            })
+          ) {
+            toastManager.add({ title: t("webhook_subscriber_url_reserved"), type: "error" });
+            return;
+          }
+
+          if (values.changeSecret) {
+            values.secret = values.newSecret.trim().length ? values.newSecret : null;
+          }
+
+          if (!values.payloadTemplate) {
+            values.payloadTemplate = null;
+          }
+
+          editWebhookMutation.mutate({
             id: webhook.id,
-            webhooks,
-            teamId: webhook.teamId ?? undefined,
-            userId: webhook.userId ?? undefined,
-            platform: webhook.platform ?? undefined,
-          })
-        ) {
-          toastManager.add({ title: t("webhook_subscriber_url_reserved"), type: "error" });
-          return;
-        }
-
-        if (values.changeSecret) {
-          values.secret = values.newSecret.trim().length ? values.newSecret : null;
-        }
-
-        if (!values.payloadTemplate) {
-          values.payloadTemplate = null;
-        }
-
-        editWebhookMutation.mutate({
-          id: webhook.id,
-          subscriberUrl: values.subscriberUrl,
-          eventTriggers: values.eventTriggers.filter((trigger) =>
-            WEBHOOK_TRIGGER_EVENTS.includes(trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number])
-          ) as unknown as Parameters<typeof editWebhookMutation.mutate>[0]["eventTriggers"],
-          active: values.active,
-          payloadTemplate: values.payloadTemplate,
-          secret: values.secret,
-          time: values.time,
-          timeUnit: values.timeUnit,
-          version: values.version,
-        });
-      }}
-      apps={installedApps?.items.map((app) => app.slug)}
-    />
+            subscriberUrl: values.subscriberUrl,
+            eventTriggers: values.eventTriggers.filter((trigger) =>
+              WEBHOOK_TRIGGER_EVENTS.includes(trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number])
+            ) as unknown as Parameters<typeof editWebhookMutation.mutate>[0]["eventTriggers"],
+            active: values.active,
+            payloadTemplate: values.payloadTemplate,
+            secret: values.secret,
+            time: values.time,
+            timeUnit: values.timeUnit,
+            version: values.version,
+          });
+        }}
+        apps={installedApps?.items.map((app) => app.slug)}
+      />
+      <div className="mx-auto max-w-4xl px-4 pb-10">
+        <WebhookDeliveryHistory webhookId={webhook.id} />
+      </div>
+    </>
   );
 }
 

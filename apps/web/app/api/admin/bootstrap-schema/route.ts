@@ -1,3 +1,4 @@
+import process from "node:process";
 import prisma from "@calcom/prisma";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -39,10 +40,7 @@ export async function POST(req: NextRequest) {
   // ── Enterprise Features (20260526200000) ─────────────────────────────────
 
   results.push(
-    await run(
-      "MembershipRole VIEWER",
-      `ALTER TYPE "MembershipRole" ADD VALUE IF NOT EXISTS 'VIEWER'`
-    )
+    await run("MembershipRole VIEWER", `ALTER TYPE "MembershipRole" ADD VALUE IF NOT EXISTS 'VIEWER'`)
   );
 
   for (const [col, def] of [
@@ -53,12 +51,7 @@ export async function POST(req: NextRequest) {
     ["brandName", "TEXT"],
     ["hidePagerScheduleBranding", "BOOLEAN NOT NULL DEFAULT false"],
   ] as const) {
-    results.push(
-      await run(
-        `Team.${col}`,
-        `ALTER TABLE "Team" ADD COLUMN IF NOT EXISTS "${col}" ${def}`
-      )
-    );
+    results.push(await run(`Team.${col}`, `ALTER TABLE "Team" ADD COLUMN IF NOT EXISTS "${col}" ${def}`));
   }
 
   results.push(
@@ -133,10 +126,16 @@ export async function POST(req: NextRequest) {
   );
 
   results.push(
-    await run("ExportJob_teamId_idx", `CREATE INDEX IF NOT EXISTS "ExportJob_teamId_idx" ON "ExportJob"("teamId")`)
+    await run(
+      "ExportJob_teamId_idx",
+      `CREATE INDEX IF NOT EXISTS "ExportJob_teamId_idx" ON "ExportJob"("teamId")`
+    )
   );
   results.push(
-    await run("ExportJob_userId_idx", `CREATE INDEX IF NOT EXISTS "ExportJob_userId_idx" ON "ExportJob"("userId")`)
+    await run(
+      "ExportJob_userId_idx",
+      `CREATE INDEX IF NOT EXISTS "ExportJob_userId_idx" ON "ExportJob"("userId")`
+    )
   );
   results.push(
     await run(
@@ -177,7 +176,10 @@ export async function POST(req: NextRequest) {
     )
   );
   results.push(
-    await run("UptimeLog_teamId_idx", `CREATE INDEX IF NOT EXISTS "UptimeLog_teamId_idx" ON "UptimeLog"("teamId")`)
+    await run(
+      "UptimeLog_teamId_idx",
+      `CREATE INDEX IF NOT EXISTS "UptimeLog_teamId_idx" ON "UptimeLog"("teamId")`
+    )
   );
   results.push(
     await run(
@@ -209,10 +211,16 @@ export async function POST(req: NextRequest) {
   );
 
   results.push(
-    await run("Incident_service_idx", `CREATE INDEX IF NOT EXISTS "Incident_service_idx" ON "Incident"("service")`)
+    await run(
+      "Incident_service_idx",
+      `CREATE INDEX IF NOT EXISTS "Incident_service_idx" ON "Incident"("service")`
+    )
   );
   results.push(
-    await run("Incident_teamId_idx", `CREATE INDEX IF NOT EXISTS "Incident_teamId_idx" ON "Incident"("teamId")`)
+    await run(
+      "Incident_teamId_idx",
+      `CREATE INDEX IF NOT EXISTS "Incident_teamId_idx" ON "Incident"("teamId")`
+    )
   );
   results.push(
     await run(
@@ -257,7 +265,10 @@ export async function POST(req: NextRequest) {
     )
   );
   results.push(
-    await run("AuditLog_actorId_idx", `CREATE INDEX IF NOT EXISTS "AuditLog_actorId_idx" ON "AuditLog"("actorId")`)
+    await run(
+      "AuditLog_actorId_idx",
+      `CREATE INDEX IF NOT EXISTS "AuditLog_actorId_idx" ON "AuditLog"("actorId")`
+    )
   );
   results.push(
     await run(
@@ -273,6 +284,44 @@ export async function POST(req: NextRequest) {
       `ALTER TABLE "AuditLog"
        ADD CONSTRAINT "AuditLog_actorId_fkey"
        FOREIGN KEY ("actorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE`
+    )
+  );
+
+  // ── Webhook Delivery Log (20260526220000) ───────────────────────────────
+
+  results.push(
+    await run(
+      "WebhookDelivery table",
+      `CREATE TABLE IF NOT EXISTS "WebhookDelivery" (
+        "id"           TEXT NOT NULL,
+        "webhookId"    TEXT NOT NULL,
+        "triggerEvent" TEXT NOT NULL,
+        "subscriberUrl" TEXT NOT NULL,
+        "requestBody"  TEXT NOT NULL,
+        "statusCode"   INTEGER,
+        "success"      BOOLEAN NOT NULL DEFAULT false,
+        "errorMessage" TEXT,
+        "duration"     INTEGER NOT NULL DEFAULT 0,
+        "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "WebhookDelivery_pkey" PRIMARY KEY ("id")
+      )`
+    )
+  );
+
+  results.push(
+    await run(
+      "WebhookDelivery_webhookId_createdAt_idx",
+      `CREATE INDEX IF NOT EXISTS "WebhookDelivery_webhookId_createdAt_idx"
+       ON "WebhookDelivery"("webhookId", "createdAt" DESC)`
+    )
+  );
+
+  results.push(
+    await run(
+      "WebhookDelivery_webhookId_fkey",
+      `ALTER TABLE "WebhookDelivery"
+       ADD CONSTRAINT "WebhookDelivery_webhookId_fkey"
+       FOREIGN KEY ("webhookId") REFERENCES "Webhook"("id") ON DELETE CASCADE ON UPDATE CASCADE`
     )
   );
 

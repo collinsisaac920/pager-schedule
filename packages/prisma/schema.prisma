@@ -1206,6 +1206,7 @@ model Webhook {
   secret                String?
   platform              Boolean                    @default(false)
   scheduledTriggers     WebhookScheduledTriggers[]
+  deliveries            WebhookDelivery[]
   time                  Int?
   timeUnit              TimeUnit?
   version               String                     @default("2021-10-20")
@@ -1371,6 +1372,22 @@ model WebhookScheduledTriggers {
   booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   // @@partial_index([bookingId])
+}
+
+model WebhookDelivery {
+  id            String   @id @default(cuid())
+  webhookId     String
+  webhook       Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  triggerEvent  String
+  subscriberUrl String
+  requestBody   String   @db.Text
+  statusCode    Int?
+  success       Boolean  @default(false)
+  errorMessage  String?  @db.Text
+  duration      Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([webhookId, createdAt(sort: Desc)])
 }
 
 model BookingSeat {

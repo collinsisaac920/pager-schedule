@@ -1,4 +1,5 @@
-import prisma from "@calcom/prisma";
+import { prisma } from "@calcom/prisma";
+import type { Prisma } from "@calcom/prisma/client";
 
 export type AuditAction =
   | "MEMBER_INVITED"
@@ -13,7 +14,10 @@ export type AuditAction =
   | "SETTINGS_CHANGED"
   | "INCIDENT_CREATED"
   | "INCIDENT_RESOLVED"
-  | "SCHEDULING_UPDATED";
+  | "SCHEDULING_UPDATED"
+  | "WEBHOOK_CREATED"
+  | "WEBHOOK_DELETED"
+  | "WEBHOOK_DELIVERED";
 
 interface AuditParams {
   teamId: number;
@@ -32,7 +36,7 @@ export async function logAuditEvent(params: AuditParams): Promise<void> {
         actorId: params.actorId,
         action: params.action,
         resource: params.resource ?? null,
-        metadata: params.metadata ?? null,
+        metadata: params.metadata !== undefined ? (params.metadata as Prisma.InputJsonValue) : undefined,
         ipAddress: params.ipAddress ?? null,
       },
     });
