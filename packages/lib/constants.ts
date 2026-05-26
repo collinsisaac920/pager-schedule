@@ -15,6 +15,7 @@ const HEROKU_URL = process.env.HEROKU_APP_NAME ? `https://${process.env.HEROKU_A
 const RENDER_URL = process.env.RENDER_EXTERNAL_URL ? `https://${process.env.RENDER_EXTERNAL_URL}` : "";
 export const CALCOM_ENV = process.env.CALCOM_ENV || process.env.NODE_ENV;
 export const CALCOM_VERSION = process.env.NEXT_PUBLIC_CALCOM_VERSION ?? "";
+export const CALCOM_PRIVATE_API_ROUTE = process.env.CALCOM_PRIVATE_API_ROUTE ?? "";
 export const IS_PRODUCTION = CALCOM_ENV === "production";
 export const IS_PRODUCTION_BUILD = process.env.NODE_ENV === "production";
 export const ORGANIZER_EMAIL_EXEMPT_DOMAINS = process.env.ORGANIZER_EMAIL_EXEMPT_DOMAINS || "";
