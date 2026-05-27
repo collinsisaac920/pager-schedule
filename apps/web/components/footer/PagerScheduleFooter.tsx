@@ -1,5 +1,16 @@
 import Link from "next/link";
 
+const LEGAL_LINKS = [
+  { label: "Terms", href: "/terms" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Cookies", href: "/cookies" },
+  { label: "Security", href: "/security" },
+  { label: "DPA", href: "/dpa" },
+  { label: "SLA", href: "/sla" },
+  { label: "Acceptable Use", href: "/acceptable-use" },
+  { label: "Refunds", href: "/refunds" },
+];
+
 export default function PagerScheduleFooter() {
   return (
     <footer className="border-subtle bg-default border-t">
@@ -49,21 +60,30 @@ export default function PagerScheduleFooter() {
 
         </div>
 
-        {/* Bottom bar */}
-        <div className="border-subtle mt-10 border-t pt-6 text-center">
-          <p className="text-subtle text-xs">
-            © 2026 Pager Schedule · Built on{" "}
-            <Link
-              href="https://github.com/calcom/cal.com"
-              target="_blank"
-              className="hover:underline">
-              Cal.com (Apache 2.0)
-            </Link>{" "}
-            · Swiss Privacy Law ·{" "}
-            <Link href="https://pagerschedule.com" target="_blank" className="hover:underline">
-              pagerschedule.com
-            </Link>
-          </p>
+        {/* Legal links bar */}
+        <div className="border-subtle mt-10 border-t pt-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <p className="text-subtle text-xs">
+              © 2026 Pager Schedule · Built on{" "}
+              <Link
+                href="https://github.com/calcom/cal.com"
+                target="_blank"
+                className="hover:underline">
+                Cal.com (Apache 2.0)
+              </Link>{" "}
+              · Swiss Privacy Law
+            </p>
+            <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+              {LEGAL_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-subtle hover:text-brand text-xs transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

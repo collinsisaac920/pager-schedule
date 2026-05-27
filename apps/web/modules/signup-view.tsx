@@ -579,6 +579,16 @@ export default function Signup({
                           ? `${t("get_started")} (${getPremiumPlanPriceValue()})`
                           : t("get_started")}
                       </Button>
+                      <p className="mt-3 text-center text-xs" style={{ color: "#9ca3af" }}>
+                        By creating an account you agree to our{" "}
+                        <a href="/terms" className="underline hover:text-indigo-500" style={{ color: "#9ca3af" }}>
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="/privacy" className="underline hover:text-indigo-500" style={{ color: "#9ca3af" }}>
+                          Privacy Policy
+                        </a>
+                      </p>
                     </Form>
                   </div>
                 )}
