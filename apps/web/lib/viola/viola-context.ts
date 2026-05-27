@@ -12,10 +12,26 @@ export interface ViolaContext {
 }
 
 export async function buildViolaContext(userId: string, currentPage = "/"): Promise<ViolaContext> {
+  // User IDs in this schema are Int — parse once and reuse
+  const userIdInt = Number.parseInt(userId, 10);
+
+  if (Number.isNaN(userIdInt)) {
+    return {
+      userName: "there",
+      currentPage,
+      bookingCount: 0,
+      eventTypeCount: 0,
+      hasCalendarConnected: false,
+      hasZoomConnected: false,
+      twoFactorEnabled: false,
+      accountAgeDays: 0,
+    };
+  }
+
   try {
     const [user, bookingCount, eventTypeCount, credentials] = await Promise.all([
       prisma.user.findUnique({
-        where: { id: userId },
+        where: { id: userIdInt },
         select: {
           name: true,
           twoFactorEnabled: true,
@@ -23,13 +39,13 @@ export async function buildViolaContext(userId: string, currentPage = "/"): Prom
         },
       }),
       prisma.booking.count({
-        where: { userId, status: { not: "CANCELLED" } },
+        where: { userId: userIdInt, status: { not: "CANCELLED" } },
       }),
       prisma.eventType.count({
-        where: { userId },
+        where: { userId: userIdInt },
       }),
       prisma.credential.findMany({
-        where: { userId },
+        where: { userId: userIdInt },
         select: { type: true },
       }),
     ]);
