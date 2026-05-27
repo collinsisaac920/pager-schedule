@@ -37,7 +37,7 @@ type MenuPosition = { top: number; left: number; width: number };
 export function UserDropdown({ small }: UserDropdownProps) {
   const { data: user, isPending } = useMeQuery();
   const [open, setOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<MenuPosition>({ top: 0, left: 0, width: 0 });
+  const [menuPos, setMenuPos] = useState<MenuPosition>({ top: 0, left: 0, width: 200 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +56,9 @@ export function UserDropdown({ small }: UserDropdownProps) {
       return false;
     };
     if (!sendSessionData()) {
-      const id = setInterval(() => { if (sendSessionData()) clearInterval(id); }, 1000);
+      const id = setInterval(() => {
+        if (sendSessionData()) clearInterval(id);
+      }, 1000);
       return () => clearInterval(id);
     }
   }, [user?.username]);
@@ -68,7 +70,8 @@ export function UserDropdown({ small }: UserDropdownProps) {
       if (
         triggerRef.current?.contains(e.target as Node) ||
         menuRef.current?.contains(e.target as Node)
-      ) return;
+      )
+        return;
       setOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -78,7 +81,9 @@ export function UserDropdown({ small }: UserDropdownProps) {
   // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
@@ -89,102 +94,117 @@ export function UserDropdown({ small }: UserDropdownProps) {
   const displayName = isPending ? "Loading..." : (user?.name ?? "User");
 
   const handleToggle = () => {
-    if (!open && triggerRef.current) {
+    if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      // Position above trigger (menu opens upward)
       setMenuPos({
-        top: rect.top,
+        // Open BELOW the trigger — the trigger is near the top of the screen
+        top: rect.bottom + 8,
         left: rect.left,
-        width: rect.width,
+        width: Math.max(rect.width, 200),
       });
     }
     setOpen((prev) => !prev);
   };
 
-  // Portal menu rendered into document.body — escapes all overflow constraints
-  const menu = open && typeof document !== "undefined"
-    ? createPortal(
-        <div
-          ref={menuRef}
-          style={{
-            position: "fixed",
-            left: menuPos.left,
-            width: menuPos.width,
-            bottom: window.innerHeight - menuPos.top + 8,
-            zIndex: 99999,
-            background: "#fff",
-            borderRadius: 14,
-            border: "1px solid #e2e8f0",
-            boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-            overflow: "hidden",
-            minWidth: 200,
-          }}>
-          {/* Header with name + email */}
-          <div style={{ padding: "12px 14px", borderBottom: "1px solid #f1f5f9" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-              {user?.name ?? "User"}
-            </div>
-            <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
-              {user?.email ?? ""}
-            </div>
-          </div>
-
-          {/* Nav links */}
-          {([
-            { label: "👤  My Profile", href: "/settings/my-account/profile" },
-            { label: "⚙️  Settings", href: "/settings/my-account/general" },
-            { label: "🌙  Out of Office", href: "/settings/my-account/out-of-office" },
-            { label: "💳  Billing", href: "/settings/billing" },
-          ] as const).map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              style={{
-                display: "block",
-                padding: "10px 14px",
-                fontSize: 14,
-                color: "#374151",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-              {item.label}
-            </a>
-          ))}
-
-          <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-
-          {/* Sign out */}
-          <button
-            type="button"
-            onClick={async () => {
-              setOpen(false);
-              try { track("user_logged_out", {}); resetUser(); } catch { /* ignore */ }
-              await signOut({ callbackUrl: "/auth/logout" });
-            }}
+  // Portal renders into document.body — escapes sidebar overflow and z-index constraints
+  const menuEl =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={menuRef}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "10px 14px",
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: "#ef4444",
-              fontSize: 14,
-              textAlign: "left",
-              fontFamily: "inherit",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-            🚪  Sign Out
-          </button>
-        </div>,
-        document.body
-      )
-    : null;
+              position: "fixed",
+              top: menuPos.top,
+              left: menuPos.left,
+              width: menuPos.width,
+              zIndex: 99999,
+              background: "#fff",
+              borderRadius: 14,
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+              overflow: "hidden",
+            }}>
+            {/* Name + email header */}
+            <div style={{ padding: "12px 14px", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
+                {user?.name ?? "User"}
+              </div>
+              <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+                {user?.email ?? ""}
+              </div>
+            </div>
+
+            {/* Links */}
+            {(
+              [
+                { label: "👤  My Profile", href: "/settings/my-account/profile" },
+                { label: "⚙️  Settings", href: "/settings/my-account/general" },
+                { label: "🌙  Out of Office", href: "/settings/my-account/out-of-office" },
+                { label: "💳  Billing", href: "/settings/billing" },
+              ] as const
+            ).map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                style={{
+                  display: "block",
+                  padding: "10px 14px",
+                  fontSize: 14,
+                  color: "#374151",
+                  textDecoration: "none",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "#f9fafb";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "transparent";
+                }}>
+                {item.label}
+              </a>
+            ))}
+
+            <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+
+            {/* Sign Out */}
+            <button
+              type="button"
+              onClick={async () => {
+                setOpen(false);
+                try {
+                  track("user_logged_out", {});
+                  resetUser();
+                } catch {
+                  // ignore analytics errors
+                }
+                await signOut({ callbackUrl: "/auth/logout" });
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#ef4444",
+                fontSize: 14,
+                textAlign: "left",
+                fontFamily: "inherit",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "#fef2f2";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+              }}>
+              🚪  Sign Out
+            </button>
+          </div>,
+          document.body
+        )
+      : null;
 
   if (small) {
     return (
@@ -195,6 +215,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
           disabled={isPending}
           data-testid="user-dropdown-trigger-button"
           onClick={handleToggle}
+          aria-expanded={open}
           style={{
             display: "flex",
             alignItems: "center",
@@ -211,7 +232,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
           }}>
           {initials}
         </button>
-        {menu}
+        {menuEl}
       </>
     );
   }
@@ -224,6 +245,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
         disabled={isPending}
         data-testid="user-dropdown-trigger-button"
         onClick={handleToggle}
+        aria-expanded={open}
         style={{
           display: "flex",
           alignItems: "center",
@@ -284,7 +306,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-      {menu}
+      {menuEl}
     </>
   );
 }
