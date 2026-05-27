@@ -287,6 +287,46 @@ export async function POST(req: NextRequest) {
     )
   );
 
+  // ── 2FA + Account-Lockout columns on User (20260524000000) ─────────────
+
+  results.push(
+    await run(
+      "TwoFactorMethod enum",
+      `DO $$ BEGIN
+         CREATE TYPE "TwoFactorMethod" AS ENUM ('TOTP', 'EMAIL', 'SMS');
+       EXCEPTION WHEN duplicate_object THEN null;
+       END $$`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.twoFactorMethod",
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "twoFactorMethod" "TwoFactorMethod" NOT NULL DEFAULT 'TOTP'`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.phoneForTwoFactor",
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phoneForTwoFactor" TEXT`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.failedLoginAttempts",
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.lockUntil",
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockUntil" TIMESTAMP(3)`
+    )
+  );
+
   // ── Webhook Delivery Log (20260526220000) ───────────────────────────────
 
   results.push(
