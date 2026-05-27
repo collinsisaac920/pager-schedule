@@ -3438,6 +3438,7 @@ __metadata:
     node-mocks-http: "npm:1.16.2"
     nodemailer: "npm:7.0.12"
     nuqs: "npm:2.8.2"
+    openai: "npm:^6.39.0"
     openid-client: "npm:6.5.0"
     otplib: "npm:12.0.1"
     postcss: "npm:8.5.6"
