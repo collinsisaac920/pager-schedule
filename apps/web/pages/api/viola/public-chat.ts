@@ -70,12 +70,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ message: responseText });
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    console.error("[Viola/public] chat error:", errMsg);
+    console.error("[Viola/public] chat error:", err instanceof Error ? err.message : String(err));
     return res.status(200).json({
       message:
         "I'm having a little trouble right now. Please reach out to the host directly if you need help booking.",
-      _debug: errMsg,
     });
   }
 }

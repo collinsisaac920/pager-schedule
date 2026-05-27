@@ -1,6 +1,5 @@
 import process from "node:process";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { detectAction } from "@lib/viola/viola-actions";
 import { buildViolaContext } from "@lib/viola/viola-context";
 import { buildViolaSystemPrompt } from "@lib/viola/viola-prompts";
@@ -31,12 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const session = await getServerSession({ req: buildLegacyRequest(req, res) });
+    const session = await getServerSession({ req });
     if (!session?.user?.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userId = session.user.id;
+    const userId = String(session.user.id);
 
     if (!checkRateLimit(userId)) {
       return res.status(429).json({
@@ -79,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ message: responseText, action });
   } catch (err) {
-    console.error("[Viola] chat error:", err);
+    console.error("[Viola] chat error:", err instanceof Error ? err.message : String(err));
     return res.status(200).json({
       message:
         "I'm having a little trouble right now. Please email support@pagerschedule.com if you need immediate help.",
