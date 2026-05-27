@@ -302,28 +302,28 @@ export async function POST(req: NextRequest) {
   results.push(
     await run(
       "User.twoFactorMethod",
-      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "twoFactorMethod" "TwoFactorMethod" NOT NULL DEFAULT 'TOTP'`
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "twoFactorMethod" "TwoFactorMethod" NOT NULL DEFAULT 'TOTP'`
     )
   );
 
   results.push(
     await run(
       "User.phoneForTwoFactor",
-      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phoneForTwoFactor" TEXT`
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phoneForTwoFactor" TEXT`
     )
   );
 
   results.push(
     await run(
       "User.failedLoginAttempts",
-      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0`
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0`
     )
   );
 
   results.push(
     await run(
       "User.lockUntil",
-      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockUntil" TIMESTAMP(3)`
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "lockUntil" TIMESTAMP(3)`
     )
   );
 
