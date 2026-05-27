@@ -3,6 +3,7 @@
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { resetUser, track } from "@lib/analytics";
 import { signOut } from "next-auth/react";
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 
 declare global {
@@ -31,9 +32,12 @@ function getInitials(name: string | null | undefined): string {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
+type MenuPosition = { top: number; left: number; width: number };
+
 export function UserDropdown({ small }: UserDropdownProps) {
   const { data: user, isPending } = useMeQuery();
   const [open, setOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<MenuPosition>({ top: 0, left: 0, width: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -62,13 +66,10 @@ export function UserDropdown({ small }: UserDropdownProps) {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node) &&
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
+        triggerRef.current?.contains(e.target as Node) ||
+        menuRef.current?.contains(e.target as Node)
+      ) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -87,14 +88,113 @@ export function UserDropdown({ small }: UserDropdownProps) {
   const initials = getInitials(user?.name);
   const displayName = isPending ? "Loading..." : (user?.name ?? "User");
 
+  const handleToggle = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      // Position above trigger (menu opens upward)
+      setMenuPos({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+    setOpen((prev) => !prev);
+  };
+
+  // Portal menu rendered into document.body — escapes all overflow constraints
+  const menu = open && typeof document !== "undefined"
+    ? createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            left: menuPos.left,
+            width: menuPos.width,
+            bottom: window.innerHeight - menuPos.top + 8,
+            zIndex: 99999,
+            background: "#fff",
+            borderRadius: 14,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+            overflow: "hidden",
+            minWidth: 200,
+          }}>
+          {/* Header with name + email */}
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid #f1f5f9" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
+              {user?.name ?? "User"}
+            </div>
+            <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+              {user?.email ?? ""}
+            </div>
+          </div>
+
+          {/* Nav links */}
+          {([
+            { label: "👤  My Profile", href: "/settings/my-account/profile" },
+            { label: "⚙️  Settings", href: "/settings/my-account/general" },
+            { label: "🌙  Out of Office", href: "/settings/my-account/out-of-office" },
+            { label: "💳  Billing", href: "/settings/billing" },
+          ] as const).map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              style={{
+                display: "block",
+                padding: "10px 14px",
+                fontSize: 14,
+                color: "#374151",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+              {item.label}
+            </a>
+          ))}
+
+          <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+
+          {/* Sign out */}
+          <button
+            type="button"
+            onClick={async () => {
+              setOpen(false);
+              try { track("user_logged_out", {}); resetUser(); } catch { /* ignore */ }
+              await signOut({ callbackUrl: "/auth/logout" });
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 14px",
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#ef4444",
+              fontSize: 14,
+              textAlign: "left",
+              fontFamily: "inherit",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+            🚪  Sign Out
+          </button>
+        </div>,
+        document.body
+      )
+    : null;
+
   if (small) {
     return (
-      <div style={{ position: "relative" }}>
+      <>
         <button
           ref={triggerRef}
           type="button"
           disabled={isPending}
-          onClick={() => setOpen(!open)}
+          data-testid="user-dropdown-trigger-button"
+          onClick={handleToggle}
           style={{
             display: "flex",
             alignItems: "center",
@@ -111,19 +211,19 @@ export function UserDropdown({ small }: UserDropdownProps) {
           }}>
           {initials}
         </button>
-        {open && <DropdownMenu onClose={() => setOpen(false)} ref={menuRef} />}
-      </div>
+        {menu}
+      </>
     );
   }
 
   return (
-    <div style={{ position: "relative", width: "100%" }}>
+    <>
       <button
         ref={triggerRef}
         type="button"
         disabled={isPending}
         data-testid="user-dropdown-trigger-button"
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         style={{
           display: "flex",
           alignItems: "center",
@@ -177,122 +277,14 @@ export function UserDropdown({ small }: UserDropdownProps) {
           strokeWidth="2.5"
           strokeLinecap="round"
           style={{
-            transform: open ? "rotate(180deg)" : "none",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.2s",
             flexShrink: 0,
           }}>
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-
-      {open && <DropdownMenu onClose={() => setOpen(false)} ref={menuRef} />}
-    </div>
+      {menu}
+    </>
   );
 }
-
-import { forwardRef } from "react";
-
-const DropdownMenu = forwardRef<HTMLDivElement, { onClose: () => void }>(function DropdownMenu(
-  { onClose },
-  ref
-) {
-  const handleSignOut = async () => {
-    onClose();
-    try {
-      track("user_logged_out", {});
-      resetUser();
-    } catch {
-      // ignore analytics errors
-    }
-    await signOut({ callbackUrl: "/auth/logout" });
-  };
-
-  const itemStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "9px 14px",
-    color: "#374151",
-    textDecoration: "none",
-    fontSize: 14,
-    background: "transparent",
-    border: "none",
-    width: "100%",
-    textAlign: "left",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    transition: "background 0.1s",
-  };
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        position: "absolute",
-        bottom: "calc(100% + 8px)",
-        left: 0,
-        right: 0,
-        minWidth: 200,
-        background: "#fff",
-        borderRadius: 14,
-        border: "1px solid #e2e8f0",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-        zIndex: 9999,
-        overflow: "hidden",
-      }}>
-      <a
-        href="/settings/my-account/profile"
-        style={itemStyle}
-        onClick={onClose}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
-        My Profile
-      </a>
-
-      <a
-        href="/settings/my-account/general"
-        style={itemStyle}
-        onClick={onClose}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 1v2m0 18v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" /></svg>
-        Settings
-      </a>
-
-      <a
-        href="/settings/my-account/out-of-office"
-        style={itemStyle}
-        onClick={onClose}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-        Out of Office
-      </a>
-
-      <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-
-      <a
-        href="/settings/billing"
-        style={itemStyle}
-        onClick={onClose}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
-        Billing
-      </a>
-
-      <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-
-      <button
-        type="button"
-        style={{ ...itemStyle, color: "#ef4444" }}
-        onClick={handleSignOut}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-        Sign Out
-      </button>
-    </div>
-  );
-});
