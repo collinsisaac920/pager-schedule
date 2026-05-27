@@ -1,33 +1,9 @@
 "use client";
 
-import { ROADMAP } from "@calcom/lib/constants";
-import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
-import classNames from "@calcom/ui/classNames";
-import { Avatar } from "@calcom/ui/components/avatar";
-import {
-  Dropdown,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@calcom/ui/components/dropdown";
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  CircleHelpIcon,
-  LogOutIcon,
-  MapIcon,
-  MoonIcon,
-  SettingsIcon,
-  UserIcon,
-} from "@coss/ui/icons";
-import { track, resetUser } from "@lib/analytics";
-import Link from "next/link";
+import { resetUser, track } from "@lib/analytics";
 import { signOut } from "next-auth/react";
-import type { MouseEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -41,7 +17,6 @@ declare global {
 
 type BeaconFunction = {
   (command: "session-data", data: Record<string, string | number>): void;
-  // Catch-all for other methods - add explicit types above if using new commands
   (...args: unknown[]): void;
 };
 
@@ -49,13 +24,22 @@ interface UserDropdownProps {
   small?: boolean;
 }
 
-export function UserDropdown({ small }: UserDropdownProps) {
-  const { t } = useLocale();
-  const { data: user, isPending } = useMeQuery();
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
 
+export function UserDropdown({ small }: UserDropdownProps) {
+  const { data: user, isPending } = useMeQuery();
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Beacon session data
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const sendSessionData = () => {
       const Beacon = window.Beacon;
       if (Beacon) {
@@ -67,157 +51,248 @@ export function UserDropdown({ small }: UserDropdownProps) {
       }
       return false;
     };
-
-    // Try immediately, then poll if Beacon isn't loaded yet
     if (!sendSessionData()) {
-      const intervalId = setInterval(() => {
-        if (sendSessionData()) {
-          clearInterval(intervalId);
-        }
-      }, 1000);
-
-      return () => clearInterval(intervalId);
+      const id = setInterval(() => { if (sendSessionData()) clearInterval(id); }, 1000);
+      return () => clearInterval(id);
     }
   }, [user?.username]);
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [openSupportAfterClose, setOpenSupportAfterClose] = useState(false);
-
-  const handleHelpClick = (e?: MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-
-    setOpenSupportAfterClose(true);
-    setMenuOpen(false);
-  };
-
+  // Close on outside click
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!menuOpen && openSupportAfterClose) {
-      setTimeout(() => {
-        window.Support?.open();
-      }, 0);
-      setOpenSupportAfterClose(false);
-    }
-  }, [menuOpen, openSupportAfterClose]);
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
 
-  // Prevent rendering dropdown if user isn't available.
-  // We don't want to show nameless user.
-  if (!user && !isPending) {
-    return null;
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
+
+  if (!user && !isPending) return null;
+
+  const initials = getInitials(user?.name);
+  const displayName = isPending ? "Loading..." : (user?.name ?? "User");
+
+  if (small) {
+    return (
+      <div style={{ position: "relative" }}>
+        <button
+          ref={triggerRef}
+          type="button"
+          disabled={isPending}
+          onClick={() => setOpen(!open)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg,#6366f1,#818cf8)",
+            border: "none",
+            cursor: "pointer",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+          }}>
+          {initials}
+        </button>
+        {open && <DropdownMenu onClose={() => setOpen(false)} ref={menuRef} />}
+      </div>
+    );
   }
 
   return (
-    <Dropdown open={menuOpen} onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          disabled={isPending}
-          data-testid="user-dropdown-trigger-button"
-          className={classNames(
-            "hover:bg-emphasis todesktop:!bg-transparent group mx-0 flex w-full cursor-pointer appearance-none items-center rounded-full text-left outline-none transition focus:outline-none focus:ring-0 md:rounded-none lg:rounded",
-            small ? "p-2" : "px-2 py-1.5"
-          )}>
-          <span
-            className={classNames(
-              small ? "h-4 w-4" : "h-5 w-5 ltr:mr-2 rtl:ml-2",
-              "relative shrink-0 rounded-full"
-            )}>
-            <Avatar
-              size={small ? "xs" : "xsm"}
-              imageSrc={user?.avatarUrl ?? user?.avatar}
-              alt={user?.username ? `${user.username} Avatar` : "Nameless User Avatar"}
-              className="overflow-hidden"
-            />
-            <span
-              className={classNames(
-                "border-muted absolute -bottom-1 -right-1 rounded-full border bg-green-500",
-                small ? "-bottom-0.5 -right-0.5 h-2.5 w-2.5" : "-bottom-0.5 right-0 h-2 w-2"
-              )}
-            />
-          </span>
-          {!small && (
-            <span className="flex grow items-center gap-2">
-              <span className="w-24 shrink-0 text-sm leading-none">
-                <span className="text-emphasis block truncate py-0.5 font-medium leading-normal">
-                  {isPending ? "Loading..." : (user?.name ?? "Nameless User")}
-                </span>
-              </span>
-              {menuOpen ? (
-                <ChevronUpIcon
-                  className="group-hover:text-subtle text-muted h-4 w-4 shrink-0 transition rtl:mr-4"
-                  aria-hidden="true"
-                />
-              ) : (
-                <ChevronDownIcon
-                  className="group-hover:text-subtle text-muted h-4 w-4 shrink-0 transition rtl:mr-4"
-                  aria-hidden="true"
-                />
-              )}
-            </span>
-          )}
-        </button>
-      </DropdownMenuTrigger>
+    <div style={{ position: "relative", width: "100%" }}>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={isPending}
+        data-testid="user-dropdown-trigger-button"
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 10px",
+          borderRadius: 10,
+          background: open ? "#f0effe" : "transparent",
+          border: `1px solid ${open ? "#c4b5fd" : "transparent"}`,
+          cursor: isPending ? "not-allowed" : "pointer",
+          width: "100%",
+          textAlign: "left",
+          transition: "background 0.15s, border-color 0.15s",
+        }}>
+        {/* Avatar */}
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg,#6366f1,#818cf8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#fff",
+            flexShrink: 0,
+          }}>
+          {initials}
+        </div>
+        {/* Name */}
+        <span
+          style={{
+            flex: 1,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#111827",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}>
+          {displayName}
+        </span>
+        {/* Chevron */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#9ca3af"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          style={{
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 0.2s",
+            flexShrink: 0,
+          }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
 
-      <DropdownMenuPortal>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuItem asChild>
-            <Link href="/settings/my-account/profile" className="flex items-center gap-2 px-2 py-2 text-sm">
-              <UserIcon className="h-4 w-4 shrink-0" />
-              {t("my_profile")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/settings/my-account/general" className="flex items-center gap-2 px-2 py-2 text-sm">
-              <SettingsIcon className="h-4 w-4 shrink-0" />
-              {t("my_settings")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/settings/my-account/out-of-office"
-              className="flex items-center gap-2 px-2 py-2 text-sm">
-              <MoonIcon className="h-4 w-4 shrink-0" />
-              {t("out_of_office")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem asChild>
-            <a
-              href={ROADMAP}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 px-2 py-2 text-sm">
-              <MapIcon className="h-4 w-4 shrink-0" />
-              {t("visit_roadmap")}
-            </a>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="flex items-center gap-2 px-2 py-2 text-sm cursor-pointer"
-            onClick={handleHelpClick}>
-            <CircleHelpIcon className="h-4 w-4 shrink-0" />
-            {t("help")}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            className="text-red-600 focus:text-red-600 flex items-center gap-2 px-2 py-2 text-sm cursor-pointer"
-            onClick={() => {
-              // Isolate analytics so a failure never blocks sign-out
-              try {
-                track("user_logged_out", {});
-                resetUser();
-              } catch {
-                // ignore analytics errors
-              }
-              signOut({ callbackUrl: "/auth/logout" });
-            }}>
-            <LogOutIcon className="h-4 w-4 shrink-0" />
-            {t("sign_out")}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </Dropdown>
+      {open && <DropdownMenu onClose={() => setOpen(false)} ref={menuRef} />}
+    </div>
   );
 }
+
+import { forwardRef } from "react";
+
+const DropdownMenu = forwardRef<HTMLDivElement, { onClose: () => void }>(function DropdownMenu(
+  { onClose },
+  ref
+) {
+  const handleSignOut = async () => {
+    onClose();
+    try {
+      track("user_logged_out", {});
+      resetUser();
+    } catch {
+      // ignore analytics errors
+    }
+    await signOut({ callbackUrl: "/auth/logout" });
+  };
+
+  const itemStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "9px 14px",
+    color: "#374151",
+    textDecoration: "none",
+    fontSize: 14,
+    background: "transparent",
+    border: "none",
+    width: "100%",
+    textAlign: "left",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    transition: "background 0.1s",
+  };
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: "absolute",
+        bottom: "calc(100% + 8px)",
+        left: 0,
+        right: 0,
+        minWidth: 200,
+        background: "#fff",
+        borderRadius: 14,
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+        zIndex: 9999,
+        overflow: "hidden",
+      }}>
+      <a
+        href="/settings/my-account/profile"
+        style={itemStyle}
+        onClick={onClose}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+        My Profile
+      </a>
+
+      <a
+        href="/settings/my-account/general"
+        style={itemStyle}
+        onClick={onClose}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 1v2m0 18v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" /></svg>
+        Settings
+      </a>
+
+      <a
+        href="/settings/my-account/out-of-office"
+        style={itemStyle}
+        onClick={onClose}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+        Out of Office
+      </a>
+
+      <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+
+      <a
+        href="/settings/billing"
+        style={itemStyle}
+        onClick={onClose}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
+        Billing
+      </a>
+
+      <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+
+      <button
+        type="button"
+        style={{ ...itemStyle, color: "#ef4444" }}
+        onClick={handleSignOut}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+        Sign Out
+      </button>
+    </div>
+  );
+});
