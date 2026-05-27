@@ -327,6 +327,67 @@ export async function POST(req: NextRequest) {
     )
   );
 
+  results.push(
+    await run(
+      "User.lastFailedLoginAt",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "lastFailedLoginAt" TIMESTAMP(3)`
+    )
+  );
+
+  // ── OAuth Account-Linking audit columns (20260526100000) ─────────────────
+
+  results.push(
+    await run(
+      "User.identityProviderChangedAt",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "identityProviderChangedAt" TIMESTAMP(3)`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.pendingProviderLinkToken",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pendingProviderLinkToken" TEXT`
+    )
+  );
+
+  results.push(
+    await run(
+      "users_pendingProviderLinkToken_key",
+      `CREATE UNIQUE INDEX IF NOT EXISTS "users_pendingProviderLinkToken_key"
+       ON "users"("pendingProviderLinkToken")`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.pendingProviderLinkExpiry",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pendingProviderLinkExpiry" TIMESTAMP(3)`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.pendingProviderLinkProvider",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pendingProviderLinkProvider" TEXT`
+    )
+  );
+
+  results.push(
+    await run(
+      "User.pendingProviderLinkProviderId",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pendingProviderLinkProviderId" TEXT`
+    )
+  );
+
+  // ── autoOptInFeatures column on User (20251217155117) ────────────────────
+
+  results.push(
+    await run(
+      "User.autoOptInFeatures",
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "autoOptInFeatures" BOOLEAN NOT NULL DEFAULT false`
+    )
+  );
+
   // ── Webhook Delivery Log (20260526220000) ───────────────────────────────
 
   results.push(
