@@ -18,6 +18,7 @@ import { Icon } from "@calcom/ui/components/icon";
 import type { VerticalTabItemProps } from "@calcom/ui/components/navigation";
 import { VerticalTabItem } from "@calcom/ui/components/navigation";
 import { Skeleton } from "@calcom/ui/components/skeleton";
+import { PagerScheduleSettingsDashboard } from "@components/dashboard/PagerScheduleSettingsDashboard";
 import { ArrowLeftIcon } from "@coss/ui/icons";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,8 +26,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import type { ComponentProps } from "react";
 import React, { useEffect, useMemo, useState } from "react";
-import { PagerScheduleSettingsDashboard } from "@components/dashboard/PagerScheduleSettingsDashboard";
-import Shell from "~/shell/Shell";
+import type Shell from "~/shell/Shell";
 
 const getTabs = (
   orgBranding: {
@@ -77,6 +77,11 @@ const getTabs = (
           name: "push_notifications",
           href: "/settings/my-account/push-notifications",
           trackingMetadata: { section: "my_account", page: "push_notifications" },
+        },
+        {
+          name: "Viola AI",
+          href: "/settings/my-account/viola",
+          trackingMetadata: { section: "my_account", page: "viola" },
         },
         // TODO
         // { name: "referrals", href: "/settings/my-account/referrals" },
@@ -279,7 +284,7 @@ const useTabs = ({
   permissions?: SettingsPermissions;
 }) => {
   const session = useSession();
-  // @ts-ignore - tRPC type conflict
+  // @ts-expect-error - tRPC type conflict
   const { data: user } = trpc.viewer.me.get.useQuery({ includePasswordAdded: true });
   const orgBranding = null as { id?: number; slug?: string; name?: string; logoUrl?: string | null } | null;
   const isAdmin = session.data?.user.role === UserPermissionRole.ADMIN;

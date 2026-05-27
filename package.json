@@ -230,5 +230,9 @@
   "syncpack": {
     "filter": "^(?!@calcom).*",
     "semverRange": ""
+  },
+  "dependencies": {
+    "ai": "^6.0.191",
+    "openai": "^6.39.0"
   }
 }

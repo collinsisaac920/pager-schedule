@@ -1,16 +1,13 @@
 "use client";
 
+import { getBookerWrapperClasses } from "@calcom/features/bookings/Booker/utils/getBookerWrapperClasses";
+import { BookerWebWrapper as Booker } from "@calcom/web/modules/bookings/components/BookerWebWrapper";
+import BookingPageErrorBoundary from "@components/error/BookingPageErrorBoundary";
+import { ViolaPublicWidget } from "@components/viola/ViolaPublicWidget";
+import type { inferSSRProps } from "@lib/types/inferSSRProps";
+import type { getServerSideProps } from "@server/lib/[user]/[type]/getServerSideProps";
 import type { EmbedProps } from "app/WithEmbedSSR";
 import { useSearchParams } from "next/navigation";
-
-import { BookerWebWrapper as Booker } from "@calcom/web/modules/bookings/components/BookerWebWrapper";
-import { getBookerWrapperClasses } from "@calcom/features/bookings/Booker/utils/getBookerWrapperClasses";
-
-import type { inferSSRProps } from "@lib/types/inferSSRProps";
-
-import BookingPageErrorBoundary from "@components/error/BookingPageErrorBoundary";
-
-import type { getServerSideProps } from "@server/lib/[user]/[type]/getServerSideProps";
 
 export type PageProps = inferSSRProps<typeof getServerSideProps> & EmbedProps;
 
@@ -26,6 +23,8 @@ export const getMultipleDurationValue = (
 
 function Type({ slug, user, isEmbed, booking, isBrandingHidden, eventData, orgBannerUrl }: PageProps) {
   const searchParams = useSearchParams();
+  const hostName = eventData?.profile?.name ?? user ?? "";
+  const eventTypeTitle = eventData?.title ?? "";
 
   return (
     <BookingPageErrorBoundary>
@@ -49,6 +48,10 @@ function Type({ slug, user, isEmbed, booking, isBrandingHidden, eventData, orgBa
           )}
         />
       </main>
+      {/* Viola — booking page assistant. Only shown on non-embed pages */}
+      {!isEmbed && (
+        <ViolaPublicWidget hostName={hostName} eventTypes={eventTypeTitle ? [eventTypeTitle] : []} />
+      )}
     </BookingPageErrorBoundary>
   );
 }
