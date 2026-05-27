@@ -6,12 +6,13 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import classNames from "@calcom/ui/classNames";
 import { Avatar } from "@calcom/ui/components/avatar";
 import {
-  Menu,
-  MenuItem,
-  MenuPopup,
-  MenuSeparator,
-  MenuTrigger,
-} from "@coss/ui/components/menu";
+  Dropdown,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@calcom/ui/components/dropdown";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -22,9 +23,9 @@ import {
   SettingsIcon,
   UserIcon,
 } from "@coss/ui/icons";
+import { track, resetUser } from "@lib/analytics";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { track, resetUser } from "@lib/analytics";
 import type { MouseEvent } from "react";
 import { useEffect, useState } from "react";
 
@@ -107,100 +108,116 @@ export function UserDropdown({ small }: UserDropdownProps) {
   }
 
   return (
-    <Menu open={menuOpen} onOpenChange={setMenuOpen}>
-      <MenuTrigger
-        disabled={isPending}
-        render={
-          <button
-            type="button"
-            data-testid="user-dropdown-trigger-button"
-            className={classNames(
-              "hover:bg-emphasis todesktop:!bg-transparent group mx-0 flex w-full cursor-pointer appearance-none items-center rounded-full text-left outline-none transition focus:outline-none focus:ring-0 md:rounded-none lg:rounded",
-              small ? "p-2" : "px-2 py-1.5"
-            )}
-          />
-        }>
-        <span
+    <Dropdown open={menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={isPending}
+          data-testid="user-dropdown-trigger-button"
           className={classNames(
-            small ? "h-4 w-4" : "h-5 w-5 ltr:mr-2 rtl:ml-2",
-            "relative shrink-0 rounded-full"
+            "hover:bg-emphasis todesktop:!bg-transparent group mx-0 flex w-full cursor-pointer appearance-none items-center rounded-full text-left outline-none transition focus:outline-none focus:ring-0 md:rounded-none lg:rounded",
+            small ? "p-2" : "px-2 py-1.5"
           )}>
-          <Avatar
-            size={small ? "xs" : "xsm"}
-            imageSrc={user?.avatarUrl ?? user?.avatar}
-            alt={user?.username ? `${user.username} Avatar` : "Nameless User Avatar"}
-            className="overflow-hidden"
-          />
           <span
             className={classNames(
-              "border-muted absolute -bottom-1 -right-1 rounded-full border bg-green-500",
-              small ? "-bottom-0.5 -right-0.5 h-2.5 w-2.5" : "-bottom-0.5 right-0 h-2 w-2"
-            )}
-          />
-        </span>
-        {!small && (
-          <span className="flex grow items-center gap-2">
-            <span className="w-24 shrink-0 text-sm leading-none">
-              <span className="text-emphasis block truncate py-0.5 font-medium leading-normal">
-                {isPending ? "Loading..." : (user?.name ?? "Nameless User")}
-              </span>
-            </span>
-            {menuOpen ? (
-              <ChevronUpIcon
-                className="group-hover:text-subtle text-muted h-4 w-4 shrink-0 transition rtl:mr-4"
-                aria-hidden="true"
-              />
-            ) : (
-              <ChevronDownIcon
-                className="group-hover:text-subtle text-muted h-4 w-4 shrink-0 transition rtl:mr-4"
-                aria-hidden="true"
-              />
-            )}
+              small ? "h-4 w-4" : "h-5 w-5 ltr:mr-2 rtl:ml-2",
+              "relative shrink-0 rounded-full"
+            )}>
+            <Avatar
+              size={small ? "xs" : "xsm"}
+              imageSrc={user?.avatarUrl ?? user?.avatar}
+              alt={user?.username ? `${user.username} Avatar` : "Nameless User Avatar"}
+              className="overflow-hidden"
+            />
+            <span
+              className={classNames(
+                "border-muted absolute -bottom-1 -right-1 rounded-full border bg-green-500",
+                small ? "-bottom-0.5 -right-0.5 h-2.5 w-2.5" : "-bottom-0.5 right-0 h-2 w-2"
+              )}
+            />
           </span>
-        )}
-      </MenuTrigger>
+          {!small && (
+            <span className="flex grow items-center gap-2">
+              <span className="w-24 shrink-0 text-sm leading-none">
+                <span className="text-emphasis block truncate py-0.5 font-medium leading-normal">
+                  {isPending ? "Loading..." : (user?.name ?? "Nameless User")}
+                </span>
+              </span>
+              {menuOpen ? (
+                <ChevronUpIcon
+                  className="group-hover:text-subtle text-muted h-4 w-4 shrink-0 transition rtl:mr-4"
+                  aria-hidden="true"
+                />
+              ) : (
+                <ChevronDownIcon
+                  className="group-hover:text-subtle text-muted h-4 w-4 shrink-0 transition rtl:mr-4"
+                  aria-hidden="true"
+                />
+              )}
+            </span>
+          )}
+        </button>
+      </DropdownMenuTrigger>
 
-      <MenuPopup align="start">
-        <MenuItem render={<Link href="/settings/my-account/profile" />}>
-          <UserIcon />
-          {t("my_profile")}
-        </MenuItem>
-        <MenuItem render={<Link href="/settings/my-account/general" />}>
-          <SettingsIcon />
-          {t("my_settings")}
-        </MenuItem>
-        <MenuItem render={<Link href="/settings/my-account/out-of-office" />}>
-          <MoonIcon />
-          {t("out_of_office")}
-        </MenuItem>
-        <MenuSeparator />
+      <DropdownMenuPortal>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuItem asChild>
+            <Link href="/settings/my-account/profile" className="flex items-center gap-2 px-2 py-2 text-sm">
+              <UserIcon className="h-4 w-4 shrink-0" />
+              {t("my_profile")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings/my-account/general" className="flex items-center gap-2 px-2 py-2 text-sm">
+              <SettingsIcon className="h-4 w-4 shrink-0" />
+              {t("my_settings")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/settings/my-account/out-of-office"
+              className="flex items-center gap-2 px-2 py-2 text-sm">
+              <MoonIcon className="h-4 w-4 shrink-0" />
+              {t("out_of_office")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
 
-        <MenuItem render={<a href={ROADMAP} target="_blank" rel="noreferrer" />}>
-          <MapIcon />
-          {t("visit_roadmap")}
-        </MenuItem>
-        <MenuItem onClick={handleHelpClick}>
-          <CircleHelpIcon />
-          {t("help")}
-        </MenuItem>
-        <MenuSeparator />
+          <DropdownMenuItem asChild>
+            <a
+              href={ROADMAP}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 px-2 py-2 text-sm">
+              <MapIcon className="h-4 w-4 shrink-0" />
+              {t("visit_roadmap")}
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="flex items-center gap-2 px-2 py-2 text-sm cursor-pointer"
+            onClick={handleHelpClick}>
+            <CircleHelpIcon className="h-4 w-4 shrink-0" />
+            {t("help")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
 
-        <MenuItem
-          variant="destructive"
-          onClick={() => {
-            // Isolate analytics so a failure never blocks sign-out
-            try {
-              track("user_logged_out", {});
-              resetUser();
-            } catch {
-              // ignore analytics errors
-            }
-            signOut({ callbackUrl: "/auth/logout" });
-          }}>
-          <LogOutIcon />
-          {t("sign_out")}
-        </MenuItem>
-      </MenuPopup>
-    </Menu>
+          <DropdownMenuItem
+            className="text-red-600 focus:text-red-600 flex items-center gap-2 px-2 py-2 text-sm cursor-pointer"
+            onClick={() => {
+              // Isolate analytics so a failure never blocks sign-out
+              try {
+                track("user_logged_out", {});
+                resetUser();
+              } catch {
+                // ignore analytics errors
+              }
+              signOut({ callbackUrl: "/auth/logout" });
+            }}>
+            <LogOutIcon className="h-4 w-4 shrink-0" />
+            {t("sign_out")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
+    </Dropdown>
   );
 }
