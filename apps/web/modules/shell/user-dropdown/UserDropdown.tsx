@@ -1,3 +1,5 @@
+"use client";
+
 import { ROADMAP } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
@@ -8,9 +10,6 @@ import {
   MenuItem,
   MenuPopup,
   MenuSeparator,
-  MenuSub,
-  MenuSubPopup,
-  MenuSubTrigger,
   MenuTrigger,
 } from "@coss/ui/components/menu";
 import {
@@ -113,6 +112,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
         disabled={isPending}
         render={
           <button
+            type="button"
             data-testid="user-dropdown-trigger-button"
             className={classNames(
               "hover:bg-emphasis todesktop:!bg-transparent group mx-0 flex w-full cursor-pointer appearance-none items-center rounded-full text-left outline-none transition focus:outline-none focus:ring-0 md:rounded-none lg:rounded",
@@ -160,46 +160,47 @@ export function UserDropdown({ small }: UserDropdownProps) {
         )}
       </MenuTrigger>
 
-      <>
-        <MenuPopup align="start">
-          <>
-            <MenuItem render={<Link href="/settings/my-account/profile" />}>
-              <UserIcon />
-              {t("my_profile")}
-            </MenuItem>
-            <MenuItem render={<Link href="/settings/my-account/general" />}>
-              <SettingsIcon />
-              {t("my_settings")}
-            </MenuItem>
-            <MenuItem render={<Link href="/settings/my-account/out-of-office" />}>
-              <MoonIcon />
-              {t("out_of_office")}
-            </MenuItem>
-            <MenuSeparator />
-          </>
+      <MenuPopup align="start">
+        <MenuItem render={<Link href="/settings/my-account/profile" />}>
+          <UserIcon />
+          {t("my_profile")}
+        </MenuItem>
+        <MenuItem render={<Link href="/settings/my-account/general" />}>
+          <SettingsIcon />
+          {t("my_settings")}
+        </MenuItem>
+        <MenuItem render={<Link href="/settings/my-account/out-of-office" />}>
+          <MoonIcon />
+          {t("out_of_office")}
+        </MenuItem>
+        <MenuSeparator />
 
-          <MenuItem render={<a href={ROADMAP} target="_blank" rel="noreferrer" />}>
-            <MapIcon />
-            {t("visit_roadmap")}
-          </MenuItem>
-          <MenuItem onClick={handleHelpClick}>
-            <CircleHelpIcon />
-            {t("help")}
-          </MenuItem>
-          <MenuSeparator />
+        <MenuItem render={<a href={ROADMAP} target="_blank" rel="noreferrer" />}>
+          <MapIcon />
+          {t("visit_roadmap")}
+        </MenuItem>
+        <MenuItem onClick={handleHelpClick}>
+          <CircleHelpIcon />
+          {t("help")}
+        </MenuItem>
+        <MenuSeparator />
 
-          <MenuItem
-            variant="destructive"
-            onClick={() => {
+        <MenuItem
+          variant="destructive"
+          onClick={() => {
+            // Isolate analytics so a failure never blocks sign-out
+            try {
               track("user_logged_out", {});
               resetUser();
-              signOut({ callbackUrl: "/auth/logout" });
-            }}>
-            <LogOutIcon />
-            {t("sign_out")}
-          </MenuItem>
-        </MenuPopup>
-      </>
+            } catch {
+              // ignore analytics errors
+            }
+            signOut({ callbackUrl: "/auth/logout" });
+          }}>
+          <LogOutIcon />
+          {t("sign_out")}
+        </MenuItem>
+      </MenuPopup>
     </Menu>
   );
 }
